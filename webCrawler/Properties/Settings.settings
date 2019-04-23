@@ -1,9 +1,0 @@
-﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="webCrawler.Properties" GeneratedClassName="Settings">
-  <Profiles />
-  <Settings>
-    <Setting Name="strConn" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Server=sql36.main-hosting.eu;Database=u868160587_myhk;Uid=u868160587_myhk;Pwd=alsdud1218!</Value>
-    </Setting>
-  </Settings>
-</SettingsFile>
