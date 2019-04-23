@@ -1,0 +1,50 @@
+﻿<Window x:Class="webCrawler.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:webCrawler"
+        mc:Ignorable="d"
+        Title="webCrawler" Height="800" Width="1200">
+    <Grid Name="grid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5*"></RowDefinition>
+            <RowDefinition Height="2*"></RowDefinition>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="5*"></ColumnDefinition>
+            <ColumnDefinition Width="2*"></ColumnDefinition>
+        </Grid.ColumnDefinitions>
+        <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" AutoGenerateColumns="False" Height="Auto" VerticalAlignment="Top">
+            <DataGrid.Columns>
+                <DataGridTemplateColumn>
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding check}"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="순서" Binding="{Binding Path=no}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="상품코드" Binding="{Binding Path=id}" IsReadOnly="True"/>
+                <DataGridTemplateColumn Header="이미지" MaxWidth="150" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Image Source="{Binding Path=image}"></Image>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="등록" Binding="{Binding Path=exist}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="분류" Binding="{Binding Path=type}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="상품정보" Binding="{Binding Path=prd_info}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="src" Binding="{Binding Path=src}" MaxWidth="0"/>
+                <DataGridTextColumn Header="alt" Binding="{Binding Path=alt}" MaxWidth="0"/>
+            </DataGrid.Columns>
+        </DataGrid>
+        <Canvas Grid.Row="1" Grid.Column="0">
+            <Button Name="btnParsor" Canvas.Top="10" Canvas.Left="10" Width="100" Height="40" Click="btnParsor_Click">source 분석</Button>
+            <Button Name="btnStoreDB" Canvas.Top="10" Canvas.Left="120" Width="100" Height="40" Click="btnStoreDB_Click">DB 저장</Button>
+            <Button Name="btnGetProductInfo" Canvas.Top="10" Canvas.Left="230" Width="100" Height="40" Click="btnGetProductInfo_Click">상품 가져오기</Button>
+        </Canvas>
+        <TextBox Name="HtmlTextBox" Grid.Row="1" Grid.Column="1"></TextBox>
+    </Grid>
+</Window>
