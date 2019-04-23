@@ -39,17 +39,22 @@ namespace webCrawler
 
             browser = new ChromiumWebBrowser();
             browser.Address = "https://world.taobao.com/markets/all/login";
-            Grid.SetRow(browser, 0);
+            Grid.SetRow(browser, 1);
 
             grid.Children.Add(browser);
 
-            //browser.FrameLoadEnd += WebZBrowserFrameLoadEnded;
+            browser.FrameLoadEnd += WebZBrowserFrameLoadEnded;
+            browser.FrameLoadStart += WebZBrowserFrameLoadStarted;
             browser.LoadingStateChanged += OnLoadingStateChanged;
+        }
+
+        private void WebZBrowserFrameLoadStarted(object sender, FrameLoadStartEventArgs e)
+        {
+            Dispatcher.BeginInvoke((Action)(() => txtStatus.Text = "Loading..."));
         }
 
         private void OnLoadingStateChanged(object sender, LoadingStateChangedEventArgs e)
         {
-            
             if (!e.IsLoading)
             {
                 browser.GetSourceAsync().ContinueWith(task =>
@@ -69,13 +74,14 @@ namespace webCrawler
         {
             if (e.Frame.IsMain)
             {
-                browser.GetSourceAsync().ContinueWith(task =>
-                {
-                    strHtml = task.Result;
-                    browser.ViewSource();
-                    if(html_node != null) html_node.Add(strHtml);
-                });
+                //browser.GetSourceAsync().ContinueWith(task =>
+                //{
+                //    strHtml = task.Result;
+                //    browser.ViewSource();
+                //    if(html_node != null) html_node.Add(strHtml);
+                //});
             }
+            Dispatcher.BeginInvoke((Action)(() => txtStatus.Text = "Loading Complete !!"));
         }
         // 파싱할 상품 정보 테이블 생성
         DataTable dt;
@@ -210,7 +216,7 @@ namespace webCrawler
                         db_list.Add(new Prd_Store(
                             reader["p_id"] as string, 
                             reader["p_img"] as string, 
-                            reader["p_desc"] as string,
+                            reader["prd_attr"] as string,
                             reader["p_detail_yn"] as string
                             ));
                     }
@@ -250,7 +256,7 @@ namespace webCrawler
                     reader.Close();
                     if (!isEmpty)
                     {
-                        cmd.CommandText = "INSERT INTO taobao_goods(p_id, p_img, p_desc) VALUES(@id, @img_src, @alt)";
+                        cmd.CommandText = "INSERT INTO taobao_goods(p_id, p_img, prd_attr) VALUES(@id, @img_src, @alt)";
                         //cmd.Parameters.AddWithValue("@id", id);
                         //cmd.Parameters.AddWithValue("@img_src", src);
                         cmd.Parameters["@id"].Value = id;
@@ -261,7 +267,7 @@ namespace webCrawler
                     }
                     else
                     {
-                        cmd.CommandText = "UPDATE taobao_goods SET p_img = @img_src, p_desc = @alt WHERE p_id = @id ";
+                        cmd.CommandText = "UPDATE taobao_goods SET p_img = @img_src, prd_attr = @alt WHERE p_id = @id ";
                         cmd.Parameters["@id"].Value = id;
                         cmd.Parameters["@img_src"].Value = src;
                         cmd.Parameters["@alt"].Value = alt;
@@ -290,7 +296,7 @@ namespace webCrawler
                 if(prd.DetailYN == "0")
                 {
                     browser.Address = "https://detail.tmall.com/item.htm?id=" + prd.Id;
-                    await Task.Delay(6000);
+                    await Task.Delay(int.Parse(txtTimeOut.Text) * 1000);
                 }
             }
             // 상품 디테일 파싱하기
@@ -299,54 +305,95 @@ namespace webCrawler
 
         private void parsingPrdDetail(List<string> html_node)
         {
-            HtmlDocument doc = null, doc_li = null, doc_img = null, doc_option = null;
+            HtmlDocument doc = null, doc_li = null, doc_img = null;
             HtmlNodeCollection attributes = null, img_wrap = null, imgs = null, lis = null, price = null, opts = null;
             string[] strAttr = null, strImg = null, strOpt = null;
-            string sqlAttr = "", sqlImg = "", sqlPrice = "", sqlOpt = "";
-            foreach (var node in html_node)
+            string sqlAttr = "", sqlImg = "", sqlPrice = "", sqlOpt = "", sqlId = "";
+
+            MySqlConnection conn = null;
+            try
             {
-                // 상품 속성
-                doc = new HtmlDocument();
-                doc.LoadHtml(node);
-                attributes = doc.DocumentNode.SelectNodes("//div[@class='attributes']");
-
-                doc_li = new HtmlDocument();
-                doc_li.LoadHtml(attributes[0].InnerHtml);
-                lis = doc_li.DocumentNode.SelectNodes("//li");
-                strAttr = new string[lis.Count];
-                for(var i = 0; i < lis.Count; i++)
+                conn = new MySqlConnection(strConn);
+                MySqlCommand cmd = new MySqlCommand();
+                cmd.Connection = conn;
+                conn.Open();
+                cmd.Prepare();
+                cmd.Parameters.Add("@id", MySqlDbType.String);
+                cmd.Parameters.Add("@prd_attr", MySqlDbType.String);
+                cmd.Parameters.Add("@prd_price", MySqlDbType.String);
+                cmd.Parameters.Add("@prd_opt", MySqlDbType.String);
+                cmd.Parameters.Add("@prd_img", MySqlDbType.String);
+                foreach (var node in html_node)
                 {
-                    strAttr[i] = lis[i].InnerHtml;
-                }
-                sqlAttr = String.Join("&$%", strAttr);
+                    // 상품 속성 : prd_attr
+                    doc = new HtmlDocument();
+                    doc.LoadHtml(node);
 
-                // 상품이미지
-                img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
-                doc_img = new HtmlDocument();
-                doc_img.LoadHtml(img_wrap[0].InnerHtml);
-                imgs = doc_img.DocumentNode.SelectNodes("//img[@data-ks-lazyload]");
-                if (imgs != null)
-                {
-                    strImg = new string[imgs.Count];
-                    for (var i = 0; i < imgs.Count; i++)
+                    sqlId = doc.DocumentNode.SelectNodes("//div[@id='LineZing']")[0].Attributes["itemid"].Value;
+
+                    attributes = doc.DocumentNode.SelectNodes("//div[@class='attributes']");
+                    if (attributes != null)
                     {
-                        strImg[i] = imgs[i].Attributes["data-ks-lazyload"].Value;
+                        doc_li = new HtmlDocument();
+                        doc_li.LoadHtml(attributes[0].InnerHtml);
+                        lis = doc_li.DocumentNode.SelectNodes("//li");
+                        strAttr = new string[lis.Count];
+                        for (var i = 0; i < lis.Count; i++)
+                        {
+                            strAttr[i] = lis[i].InnerHtml;
+                        }
+                        sqlAttr = String.Join("&$%", strAttr);
                     }
-                    sqlImg = String.Join("&$%", strImg);
-                }
+                    // 상품이미지 : prd_img
+                    img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
+                    doc_img = new HtmlDocument();
+                    doc_img.LoadHtml(img_wrap[0].InnerHtml);
+                    imgs = doc_img.DocumentNode.SelectNodes("//img[@data-ks-lazyload]");
+                    if (imgs != null)
+                    {
+                        strImg = new string[imgs.Count];
+                        for (var i = 0; i < imgs.Count; i++)
+                        {
+                            strImg[i] = imgs[i].Attributes["data-ks-lazyload"].Value;
+                        }
+                        sqlImg = String.Join("&$%", strImg);
+                    }
 
-                // 상품 가격
-                price = doc.DocumentNode.SelectNodes("//div[@class='tm-promo-price']/span");
-                sqlPrice = price[0].InnerText;
+                    // 상품 가격 : prd_price
+                    price = doc.DocumentNode.SelectNodes("//div[@class='tm-promo-price']/span");
+                    if(price != null) sqlPrice = price[0].InnerText;
 
-                // 상품 옵션
-                opts = doc.DocumentNode.SelectNodes("//div[@class='tb-sku']/dl");
-                strOpt = new string[opts.Count];
-                for(var i = 0; i < opts.Count; i++)
-                {
-                    strOpt[i] = opts[i].ChildNodes["dt"].InnerText + ":" + opts[i].ChildNodes["dd"].InnerText;
+                    // 상품 옵션 : prd_opt
+                    opts = doc.DocumentNode.SelectNodes("//div[@class='tb-sku']/dl");
+                    if(strOpt != null)
+                    {
+                        strOpt = new string[opts.Count];
+                        for (var i = 0; i < opts.Count; i++)
+                        {
+                            strOpt[i] = opts[i].ChildNodes["dt"].InnerText + ":" + opts[i].ChildNodes["dd"].InnerText.Replace("\n", "").Replace("\t", "");
+                        }
+                        sqlOpt = String.Join("&$%", strOpt);
+                    }
+
+                    cmd.CommandText = "UPDATE taobao_goods SET p_detail_yn = 1, prd_attr = @prd_attr, prd_price = @prd_price, prd_opt = @prd_opt, prd_img = @prd_img WHERE p_id = @id";
+                    cmd.Parameters["@id"].Value = sqlId;
+                    cmd.Parameters["@prd_attr"].Value = sqlAttr;
+                    cmd.Parameters["@prd_price"].Value = sqlPrice;
+                    cmd.Parameters["@prd_opt"].Value = sqlOpt;
+                    cmd.Parameters["@prd_img"].Value = sqlImg;
+
+                    cmd.ExecuteNonQuery();
                 }
-                sqlOpt = String.Join("&$%", strOpt);
+                if (conn != null) conn.Close();
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                throw e;
+            }
+            finally
+            {
+                if (conn != null) conn.Close();
             }
         }
     }

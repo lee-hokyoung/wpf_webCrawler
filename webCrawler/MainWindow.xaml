@@ -5,17 +5,24 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:webCrawler"
         mc:Ignorable="d"
-        Title="webCrawler" Height="800" Width="1200">
+        Title="타오바오 상품 수집 프로그램" Height="800" Width="1200">
     <Grid Name="grid">
         <Grid.RowDefinitions>
+            <RowDefinition Height="30"></RowDefinition>
             <RowDefinition Height="5*"></RowDefinition>
             <RowDefinition Height="2*"></RowDefinition>
+            <RowDefinition Height="30"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="5*"></ColumnDefinition>
-            <ColumnDefinition Width="2*"></ColumnDefinition>
+            <ColumnDefinition Width="1*"></ColumnDefinition>
+            <ColumnDefinition Width="350"></ColumnDefinition>
         </Grid.ColumnDefinitions>
-        <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" AutoGenerateColumns="False" Height="Auto" VerticalAlignment="Top">
+        <Canvas Grid.Row="0" Grid.Column="0" Margin="0,0,0,4">
+            <TextBlock Name="txtUrlBrowser" Grid.Row="0" Grid.Column="0" Width="380" Height="20" Canvas.Left="10" Canvas.Top="3"></TextBlock>
+            <Button Name="btnPrev" Canvas.Left="400" Canvas.Top="4" Width="60" Height="20">Prev</Button>
+            <Button Name="btnNext" Canvas.Left="460" Canvas.Top="4" Width="60" Height="20">Next</Button>
+        </Canvas>
+        <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" AutoGenerateColumns="False" VerticalAlignment="Top">
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
                     <DataGridTemplateColumn.CellTemplate>
@@ -26,7 +33,7 @@
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="순서" Binding="{Binding Path=no}" IsReadOnly="True"/>
                 <DataGridTextColumn Header="상품코드" Binding="{Binding Path=id}" IsReadOnly="True"/>
-                <DataGridTemplateColumn Header="이미지" MaxWidth="150" IsReadOnly="True">
+                <DataGridTemplateColumn Header="이미지" Width="80" MaxWidth="80" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <Image Source="{Binding Path=image}"></Image>
@@ -40,11 +47,28 @@
                 <DataGridTextColumn Header="alt" Binding="{Binding Path=alt}" MaxWidth="0"/>
             </DataGrid.Columns>
         </DataGrid>
-        <Canvas Grid.Row="1" Grid.Column="0">
+        <Canvas Grid.Row="2" Grid.Column="0">
             <Button Name="btnParsor" Canvas.Top="10" Canvas.Left="10" Width="100" Height="40" Click="btnParsor_Click">source 분석</Button>
             <Button Name="btnStoreDB" Canvas.Top="10" Canvas.Left="120" Width="100" Height="40" Click="btnStoreDB_Click">DB 저장</Button>
             <Button Name="btnGetProductInfo" Canvas.Top="10" Canvas.Left="230" Width="100" Height="40" Click="btnGetProductInfo_Click">상품 가져오기</Button>
         </Canvas>
-        <TextBox Name="HtmlTextBox" Grid.Row="1" Grid.Column="1"></TextBox>
+        <Grid Grid.Row="2" Grid.Column="1">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="30"></RowDefinition>
+                <RowDefinition Height="auto"></RowDefinition>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="1*"></ColumnDefinition>
+                <ColumnDefinition Width="2*"></ColumnDefinition>
+            </Grid.ColumnDefinitions>
+            <Label Grid.Row="0" Grid.Column="0" VerticalContentAlignment="Center">상품수집 시간</Label>
+            <TextBox Name="txtTimeOut" Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center">10</TextBox>
+        </Grid>
+        <TextBlock Name="txtStatus" Grid.Row="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="10, 0, 0, 0">타오바오 상품수집 프로그램</TextBlock>
+        <!--<Label Canvas.Top="10" Canvas.Left="10" Height="30" VerticalContentAlignment="Center">검색시간</Label>
+            <TextBox Name="txtTimeout" Canvas.Top="10" Canvas.Left="73" Width="50" Height="30" VerticalContentAlignment="Center"></TextBox>-->
     </Grid>
 </Window>
