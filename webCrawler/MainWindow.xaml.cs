@@ -20,7 +20,7 @@ namespace webCrawler
     public partial class MainWindow : Window
     {
         public ChromiumWebBrowser browser;
-        public string strConn = "Server=sql36.main-hosting.eu;Database=u868160587_myhk;Uid=u868160587_myhk;Pwd=alsdud1218!;";
+        public string strConn = Properties.Settings.Default.strConn;
         public string strHtml = "";
         public string detailHtml = "";
         public List<string> html_node = null;
