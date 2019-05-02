@@ -15,7 +15,7 @@ using System.Windows.Media.Imaging;
 namespace webCrawler
 {
     /// <summary>
-    /// MainWindow.xaml에 대한 상호 작용 논리
+        /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
     public partial class MainWindow : Window
     {
@@ -60,7 +60,7 @@ namespace webCrawler
                 browser.GetSourceAsync().ContinueWith(task =>
                 {
                     strHtml = task.Result;
-                    if(strHtml.IndexOf("描述加载中") == -1 && html_node != null)
+                    if (strHtml.IndexOf("描述加载中") == -1 && html_node != null)
                     {
                         detailHtml = task.Result;
                         //browser.ViewSource();
@@ -83,7 +83,7 @@ namespace webCrawler
             }
             Dispatcher.BeginInvoke((Action)(() => txtStatus.Text = "Loading Complete !!"));
         }
-        // 파싱할 상품 정보 테이블 생성
+            // 파싱할 상품 정보 테이블 생성
         DataTable dt;
         private void Window_Loaded()
         {
@@ -99,7 +99,7 @@ namespace webCrawler
             dt.Columns.Add("alt", typeof(string));
             dgTable.ItemsSource = dt.DefaultView;
         }
-        // 파싱하기
+            // 파싱하기
         private void btnParsor_Click(object sender, RoutedEventArgs e)
         {
             //btnStoreDB.IsEnabled = false;
@@ -108,7 +108,7 @@ namespace webCrawler
             if (strHtml == "") return;
             getData(strHtml);
         }
-        // 상품리스트 파싱하기 & prd_list 에 저장하기
+            // 상품리스트 파싱하기 & prd_list 에 저장하기
         ArrayList prd_list = new ArrayList();           // Product 클래스를 담아두는 ArrayList
         List<string> id_list = new List<string>();      // 상품 중복 파싱을 방지하기 위한 상품코드 저장하는 List
         DataRow dr;
@@ -135,7 +135,7 @@ namespace webCrawler
 
                 if (id_list.IndexOf(nid) == -1)
                 {
-                    // 기존에 저장되어 있는 DB 값에 id 값이 있으면 수집된 정보라는 것을 표시
+                                // 기존에 저장되어 있는 DB 값에 id 값이 있으면 수집된 정보라는 것을 표시
                     var query = (from Prd_Store prd in db_list
                                  where prd.Id == nid
                                  select prd).SingleOrDefault();
@@ -185,13 +185,13 @@ namespace webCrawler
             btnStoreDB.IsEnabled = true;
         }
 
-        // 상품등록 여부 확인
-        // 1. 해당 아이디의 상품정보를 읽어 온다. category 별로 나누는 것도 고려해 볼 것. 우선은 전체 상품 읽어 오기
-        // 2. 불러온 상품 정보는 USER_PRD_LIST 에 담아둔다
-        // TODO USER_PRD_LIST 만들것
+               // 상품등록 여부 확인
+               // 1. 해당 아이디의 상품정보를 읽어 온다. category 별로 나누는 것도 고려해 볼 것. 우선은 전체 상품 읽어 오기
+               // 2. 불러온 상품 정보는 USER_PRD_LIST 에 담아둔다
+               // TODO USER_PRD_LIST 만들것
         ArrayList db_list = null;
         List<string> p_id_list = new List<string>();
-        // DB에 저장되어 있는 리스트 불러오기 -> db_list에 저장(Prd_Store 클래스)
+                // DB에 저장되어 있는 리스트 불러오기 -> db_list에 저장(Prd_Store 클래스)
         private void getDbData()
         {
             MySqlConnection conn = null;
@@ -214,8 +214,8 @@ namespace webCrawler
                     {
                         p_id_list.Add(id);
                         db_list.Add(new Prd_Store(
-                            reader["p_id"] as string, 
-                            reader["p_img"] as string, 
+                            reader["p_id"] as string,
+                            reader["p_img"] as string,
                             reader["prd_attr"] as string,
                             reader["p_detail_yn"] as string
                             ));
@@ -227,7 +227,7 @@ namespace webCrawler
                 if (conn != null) conn.Close();
             }
         }
-        //  DB 저장 버튼 클릭 이벤트
+             //  DB 저장 버튼 클릭 이벤트
         private void btnStoreDB_Click(object sender, RoutedEventArgs e)
         {
             MySqlConnection conn = null;
@@ -279,13 +279,14 @@ namespace webCrawler
                     item.Add(id);
                     //getDetail(id);
                 }
+                MessageBox.Show("DB 저장 완료");
             }
             finally
             {
                 if (conn != null) conn.Close();
             }
         }
-        // 상품정보 가져오기
+            // 상품정보 가져오기
         private async void btnGetProductInfo_Click(object sender, RoutedEventArgs e)
         {
             html_node = new List<string>();
@@ -293,13 +294,13 @@ namespace webCrawler
             foreach (Product prd in prd_list)
             {
                 if (idx++ == 5) break;
-                if(prd.DetailYN == "0")
+                if (prd.DetailYN == "0")
                 {
                     browser.Address = "https://detail.tmall.com/item.htm?id=" + prd.Id;
                     await Task.Delay(int.Parse(txtTimeOut.Text) * 1000);
                 }
             }
-            // 상품 디테일 파싱하기
+                    // 상품 디테일 파싱하기
             parsingPrdDetail(html_node);
         }
 
@@ -325,7 +326,7 @@ namespace webCrawler
                 cmd.Parameters.Add("@prd_img", MySqlDbType.String);
                 foreach (var node in html_node)
                 {
-                    // 상품 속성 : prd_attr
+                                 // 상품 속성 : prd_attr
                     doc = new HtmlDocument();
                     doc.LoadHtml(node);
 
@@ -344,7 +345,7 @@ namespace webCrawler
                         }
                         sqlAttr = String.Join("&$%", strAttr);
                     }
-                    // 상품이미지 : prd_img
+                                    // 상품이미지 : prd_img
                     img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
                     doc_img = new HtmlDocument();
                     doc_img.LoadHtml(img_wrap[0].InnerHtml);
@@ -359,13 +360,13 @@ namespace webCrawler
                         sqlImg = String.Join("&$%", strImg);
                     }
 
-                    // 상품 가격 : prd_price
+                                    // 상품 가격 : prd_price
                     price = doc.DocumentNode.SelectNodes("//div[@class='tm-promo-price']/span");
-                    if(price != null) sqlPrice = price[0].InnerText;
+                    if (price != null) sqlPrice = price[0].InnerText;
 
-                    // 상품 옵션 : prd_opt
+                                    // 상품 옵션 : prd_opt
                     opts = doc.DocumentNode.SelectNodes("//div[@class='tb-sku']/dl");
-                    if(strOpt != null)
+                    if (strOpt != null)
                     {
                         strOpt = new string[opts.Count];
                         for (var i = 0; i < opts.Count; i++)
@@ -384,9 +385,10 @@ namespace webCrawler
 
                     cmd.ExecuteNonQuery();
                 }
+                MessageBox.Show("상품수집 완료");
                 if (conn != null) conn.Close();
             }
-            catch(Exception e)
+            catch (Exception e)
             {
                 MessageBox.Show(e.ToString());
                 throw e;
