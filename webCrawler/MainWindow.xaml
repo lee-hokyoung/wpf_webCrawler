@@ -21,6 +21,7 @@
             <TextBlock Name="txtUrlBrowser" Grid.Row="0" Grid.Column="0" Width="380" Height="20" Canvas.Left="10" Canvas.Top="3"></TextBlock>
             <Button Name="btnPrev" Canvas.Left="400" Canvas.Top="4" Width="60" Height="20">Prev</Button>
             <Button Name="btnNext" Canvas.Left="460" Canvas.Top="4" Width="60" Height="20">Next</Button>
+            <Button Name="btnMyDB" Canvas.Left="530" Canvas.Top="4" Width="60" Height="20" Click="BtnMyDB_Click">내DB확인</Button>
         </Canvas>
         <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" AutoGenerateColumns="False" VerticalAlignment="Top">
             <DataGrid.Columns>
