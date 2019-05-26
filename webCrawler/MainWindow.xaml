@@ -25,13 +25,30 @@
         </Canvas>
         <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" AutoGenerateColumns="False" VerticalAlignment="Top">
             <DataGrid.Columns>
-                <DataGridTemplateColumn>
+                <!--<DataGridCheckBoxColumn Binding="{Binding check, UpdateSourceTrigger=PropertyChanged}">
+                    <DataGridCheckBoxColumn.HeaderTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Path=Product.AllSelected}">전체</CheckBox>
+                        </DataTemplate>
+                    </DataGridCheckBoxColumn.HeaderTemplate>
+                </DataGridCheckBoxColumn>-->
+                <!--<DataGridTemplateColumn>
+                    <DataGridTemplateColumn.Header>
+                        <CheckBox Name="chkAll" Checked="ChkAll_Checked" Unchecked="ChkAll_Unchecked"/>
+                    </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <CheckBox IsChecked="{Binding check}"/>
+                            <CheckBox IsChecked="{Binding check, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
+                </DataGridTemplateColumn>-->
+                
+                <DataGridCheckBoxColumn Binding="{Binding IsSelected}">
+                    <DataGridCheckBoxColumn.Header>
+                        <CheckBox Name="chkSelectAll" Checked="chkSelectAll_Checked" Unchecked="chkSelectAll_Unchecked"></CheckBox>
+                    </DataGridCheckBoxColumn.Header>
+                </DataGridCheckBoxColumn>
+                
                 <DataGridTextColumn Header="순서" Binding="{Binding Path=no}" IsReadOnly="True"/>
                 <DataGridTextColumn Header="상품코드" Binding="{Binding Path=id}" IsReadOnly="True"/>
                 <DataGridTemplateColumn Header="이미지" Width="80" MaxWidth="80" IsReadOnly="True">

@@ -1,7 +1,11 @@
-﻿namespace webCrawler
+﻿using GalaSoft.MvvmLight;
+using System;
+
+namespace webCrawler
 {
-    public class Product
+    public class Product : ViewModelBase
     {
+        private bool _IsSelected = false;
         private string _id;
         private string _prd_img;
         private string _prd_name;
@@ -11,38 +15,64 @@
         {
 
         }
-        public Product(string id, string prd_img, string prd_name, int row_idx, string detail_yn)
+        public Product(bool IsSelected, string id, string prd_img, string prd_name, int row_idx, string detail_yn)
         {
+            _IsSelected = IsSelected;
             _id = id;
             _prd_img = prd_img;
             _prd_name = prd_name;
             _row_idx = row_idx;
             _detail_yn = detail_yn;
         }
+        public bool IsSelected
+        {
+            get { return _IsSelected; }
+            set
+            {
+                _IsSelected = value ;
+                OnPropertyChanged("IsSelected");
+            }
+        }
+
         public string Id
         {
             get { return _id; }
-            set { _id = value; }
+            set {
+                _id = value;
+                OnPropertyChanged("Id");
+            }
         }
         public string Prd_img
         {
             get { return _prd_img; }
-            set { _prd_img = value; }
+            set {
+                _prd_img = value;
+                OnPropertyChanged("Prd_img");
+            }
         }
         public string Prd_name
         {
             get { return _prd_name; }
-            set { _prd_name = value; }
+            set {
+                _prd_name = value;
+                OnPropertyChanged("Prd_name");
+            }
         }
         public int Row_idx
         {
             get { return _row_idx; }
-            set { _row_idx = value; }
+            set {
+                _row_idx = value;
+                OnPropertyChanged("Row_idx");
+            }
         }
         public string DetailYN
         {
             get { return _detail_yn; }
-            set { _detail_yn = value; }
+            set {
+                _detail_yn = value;
+                OnPropertyChanged("DetailYN");
+            }
         }
     }
     public class Prd_Store
