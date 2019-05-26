@@ -2,6 +2,7 @@
 {
     public class Product
     {
+        private bool _chk;
         private string _id;
         private string _prd_img;
         private string _prd_name;
@@ -11,13 +12,19 @@
         {
 
         }
-        public Product(string id, string prd_img, string prd_name, int row_idx, string detail_yn)
+        public Product(bool chk, string id, string prd_img, string prd_name, int row_idx, string detail_yn)
         {
+            _chk = chk;
             _id = id;
             _prd_img = prd_img;
             _prd_name = prd_name;
             _row_idx = row_idx;
             _detail_yn = detail_yn;
+        }
+        public bool Chk
+        {
+            get { return _chk; }
+            set { _chk = value; }
         }
         public string Id
         {

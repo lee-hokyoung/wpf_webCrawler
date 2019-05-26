@@ -26,9 +26,12 @@
         <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" AutoGenerateColumns="False" VerticalAlignment="Top">
             <DataGrid.Columns>
                 <DataGridTemplateColumn>
+                    <DataGridTemplateColumn.Header>
+                        <CheckBox Name="chkAll" Checked="ChkAll_Checked" Unchecked="ChkAll_Unchecked"/>
+                    </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <CheckBox IsChecked="{Binding check}"/>
+                            <CheckBox IsChecked="{Binding check}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>

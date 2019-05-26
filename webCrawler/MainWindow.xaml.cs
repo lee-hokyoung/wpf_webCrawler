@@ -179,7 +179,7 @@ namespace webCrawler
                     dr["alt"] = alt;
                     dt.Rows.Add(dr);
                     dgTable.ItemsSource = dt.DefaultView;
-                    prd_list.Add(new Product(nid, src, alt, idx++, detailYn));
+                    prd_list.Add(new Product(false, nid, src, alt, idx++, detailYn));
                 }
             }
             btnStoreDB.IsEnabled = true;
@@ -304,8 +304,8 @@ namespace webCrawler
             var idx = 0;
             foreach (Product prd in prd_list)
             {
-                if (idx++ == 5) break;
-                if (prd.DetailYN == "0")
+                //if (idx++ == 5) break;
+                if (prd.Chk)
                 {
                     browser.Address = "https://detail.tmall.com/item.htm?id=" + prd.Id;
                     await Task.Delay(int.Parse(txtTimeOut.Text) * 1000);
@@ -362,7 +362,7 @@ namespace webCrawler
                     }
                     // 상품이미지 : prd_img
                     img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
-                    if(img_wrap != null)
+                    if (img_wrap != null)
                     {
                         doc_img = new HtmlDocument();
                         doc_img.LoadHtml(img_wrap[0].InnerHtml);
@@ -377,7 +377,7 @@ namespace webCrawler
                             sql_detail_img = String.Join("&$%", strImg);
                         }
                     }
-                    
+
                     // 상품 가격 : prd_price
                     price = doc.DocumentNode.SelectNodes("//div[@class='tm-promo-price']/span");
                     if (price != null) sql_prd_price = price[0].InnerText;
@@ -426,6 +426,45 @@ namespace webCrawler
             win_myDB.Visibility = win_myDB.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
             //Window win_myDB = new myDB();
             //win_myDB.Show();
+        }
+        // 아이템 체크 이벤트
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox chk = e.OriginalSource as CheckBox;
+            DataRowView data = chk.DataContext as DataRowView;
+            if (data == null) return;
+            string row = data.Row[1].ToString();
+
+            IEnumerable<Product> prdEnum = prd_list.OfType<Product>();
+            var prd = (from p in prdEnum where p.Id.Equals(row) select p).SingleOrDefault();
+
+            prd.Chk = true;
+        }
+        // 아이템  언체크 이벤트
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox chk = e.OriginalSource as CheckBox;
+            DataRowView data = chk.DataContext as DataRowView;
+            if (data == null) return;
+            string row = data.Row[1].ToString();
+
+            IEnumerable<Product> prdEnum = prd_list.OfType<Product>();
+            var prd = (from p in prdEnum where p.Id.Equals(row) select p).SingleOrDefault();
+
+            prd.Chk = false;
+        }
+        // 전체 체크 이벤트
+        private void ChkAll_Checked(object sender, RoutedEventArgs e)
+        {
+            foreach(var row in dgTable.ItemsSource)
+            {
+
+            }
+        }
+        // 전체 체크 해제 이벤트
+        private void ChkAll_Unchecked(object sender, RoutedEventArgs e)
+        {
+
         }
     }
 }
