@@ -30,6 +30,7 @@ namespace webCrawler
         public MainWindow()
         {
             InitializeComponent();
+            this.DataContext = new ViewModel.MainViewModel();
             InitializeChromium();
             Window_Loaded();
             getDbData();
@@ -122,9 +123,6 @@ namespace webCrawler
         {
             // MVVM DataGridViewModel
             //DataGridViewModel 
-
-            
-
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(source);
             HtmlNodeCollection nodes = doc.DocumentNode.SelectNodes("//div[@data-category='auctions']");    // 1. 각각의 상품을 nodes 에 담기
@@ -188,10 +186,8 @@ namespace webCrawler
                     dr["src"] = src;
                     dr["alt"] = alt;
                     dt.Rows.Add(dr);
-                    dgTable.ItemsSource = dt.DefaultView;
-                    prd_list.Add(new Product(false, nid, src, alt, idx++, detailYn));
-
-
+                    //dgTable.ItemsSource = dt.DefaultView;
+                    prd_list.Add(new Product(true, nid, src, alt, idx++, detailYn));
                 }
             }
             btnStoreDB.IsEnabled = true;
