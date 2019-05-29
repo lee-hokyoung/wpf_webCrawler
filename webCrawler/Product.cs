@@ -1,5 +1,4 @@
-﻿using GalaSoft.MvvmLight;
-using System;
+﻿using System.Windows.Media.Imaging;
 
 namespace webCrawler
 {
@@ -7,7 +6,7 @@ namespace webCrawler
     {
         private bool _IsSelected = false;
         private string _id;
-        private string _prd_img;
+        private BitmapImage _prd_img;
         private string _prd_name;
         private int _row_idx;
         private string _detail_yn;
@@ -15,7 +14,7 @@ namespace webCrawler
         {
 
         }
-        public Product(bool IsSelected, string id, string prd_img, string prd_name, int row_idx, string detail_yn)
+        public Product(bool IsSelected, string id, BitmapImage prd_img, string prd_name, int row_idx, string detail_yn)
         {
             _IsSelected = IsSelected;
             _id = id;
@@ -42,7 +41,7 @@ namespace webCrawler
                 OnPropertyChanged("Id");
             }
         }
-        public string Prd_img
+        public BitmapImage Prd_img
         {
             get { return _prd_img; }
             set {
