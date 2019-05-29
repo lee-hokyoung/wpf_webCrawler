@@ -1,12 +1,10 @@
 ﻿using CefSharp;
 using CefSharp.Wpf;
-using GalaSoft.MvvmLight;
 using HtmlAgilityPack;
 using MySql.Data.MySqlClient;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,7 +14,7 @@ using System.Windows.Media.Imaging;
 
 namespace webCrawler
 {
-    
+
     /// <summary>
     /// MainWindow.xaml에 대한 상호 작용 논리
     /// </summary>
@@ -30,9 +28,9 @@ namespace webCrawler
         public MainWindow()
         {
             InitializeComponent();
-            this.DataContext = new ViewModel.MainViewModel();
+            this.DataContext = new ViewModel.ProductViewModel();
             InitializeChromium();
-            Window_Loaded();
+            //Window_Loaded();
             getDbData();
         }
 
@@ -88,34 +86,16 @@ namespace webCrawler
             Dispatcher.BeginInvoke((Action)(() => txtStatus.Text = "Loading Complete !!"));
         }
         // 파싱할 상품 정보 테이블 생성
-        DataTable dt;
-        private void Window_Loaded()
-        {
-            dt = new DataTable("product");
-            dt.Columns.Add("chk", typeof(bool));
-            dt.Columns.Add("no", typeof(int));
-            dt.Columns.Add("id", typeof(string));
-            dt.Columns.Add("image", typeof(BitmapImage));
-            dt.Columns.Add("exist", typeof(string));
-            dt.Columns.Add("type", typeof(string));
-            dt.Columns.Add("prd_info", typeof(string));
-
-            dt.Columns.Add("src", typeof(string));
-            dt.Columns.Add("alt", typeof(string));
-            dgTable.ItemsSource = dt.DefaultView;
-        }
         // 파싱하기
         private void btnParsor_Click(object sender, RoutedEventArgs e)
         {
-            //btnStoreDB.IsEnabled = false;
-            //string source = HtmlTextBox.Text;
-            //if (source == "") return;
             if (strHtml == "") return;
             getData(strHtml);
         }
         // 상품리스트 파싱하기 & prd_list 에 저장하기
         ArrayList prd_list = new ArrayList();           // Product 클래스를 담아두는 ArrayList
         List<string> id_list = new List<string>();      // 상품 중복 파싱을 방지하기 위한 상품코드 저장하는 List
+        List<ViewModel.ProductViewModel> prdView_list = new List<ViewModel.ProductViewModel>();
         DataRow dr;
         int idx = 0;
 
@@ -123,6 +103,7 @@ namespace webCrawler
         {
             // MVVM DataGridViewModel
             //DataGridViewModel 
+
             HtmlDocument doc = new HtmlDocument();
             doc.LoadHtml(source);
             HtmlNodeCollection nodes = doc.DocumentNode.SelectNodes("//div[@data-category='auctions']");    // 1. 각각의 상품을 nodes 에 담기
@@ -152,44 +133,19 @@ namespace webCrawler
 
                     id_list.Add(nid);
                     bi = new BitmapImage();
-                    dr = dt.NewRow();
-                    dr["chk"] = true;
-                    dr["no"] = (idx + 1);
-                    dr["id"] = nid;
                     bi.BeginInit();
                     bi.UriSource = new Uri("http:" + src, UriKind.RelativeOrAbsolute);
                     bi.EndInit();
-                    dr["image"] = bi;
-
-                    if (query != null) dr["exist"] = "O";
-                    else dr["exist"] = "";
-                    dr["type"] = "";
-
-                    if (query == null)
-                    {
-                        dr["prd_info"] = "";
-                        detailYn = "0";
-                    }
+                    if (query == null) detailYn = "0";
                     else
                     {
-                        if (query.Detail_yn == "1")
-                        {
-                            dr["prd_info"] = "0";
-                            detailYn = "1";
-                        }
-                        else
-                        {
-                            dr["prd_info"] = "";
-                            detailYn = "0";
-                        }
+                        if (query.Detail_yn == "1") detailYn = "1";
+                        else detailYn = "0";
                     }
-                    dr["src"] = src;
-                    dr["alt"] = alt;
-                    dt.Rows.Add(dr);
-                    //dgTable.ItemsSource = dt.DefaultView;
-                    prd_list.Add(new Product(true, nid, src, alt, idx++, detailYn));
+                    prdView_list.Add(new ViewModel.ProductViewModel(false, nid, bi, alt, idx++, detailYn));
                 }
             }
+            dgTable.ItemsSource = prdView_list;
             btnStoreDB.IsEnabled = true;
         }
 
@@ -427,7 +383,6 @@ namespace webCrawler
                 if (conn != null) conn.Close();
             }
         }
-
         private void BtnMyDB_Click(object sender, RoutedEventArgs e)
         {
             Window win_myDB = (Window)Application.LoadComponent(new Uri("myDB.xaml", UriKind.Relative));
@@ -435,53 +390,21 @@ namespace webCrawler
             //Window win_myDB = new myDB();
             //win_myDB.Show();
         }
-        // 아이템 체크 이벤트
-        private void CheckBox_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox chk = e.OriginalSource as CheckBox;
-            DataRowView data = chk.DataContext as DataRowView;
-            if (data == null) return;
-            string row = data.Row[1].ToString();
-
-            IEnumerable<Product> prdEnum = prd_list.OfType<Product>();
-            var prd = (from p in prdEnum where p.Id.Equals(row) select p).SingleOrDefault();
-
-            prd.IsSelected = true;
-        }
-        // 아이템  언체크 이벤트
-        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
-        {
-            CheckBox chk = e.OriginalSource as CheckBox;
-            DataRowView data = chk.DataContext as DataRowView;
-            if (data == null) return;
-            string row = data.Row[1].ToString();
-
-            IEnumerable<Product> prdEnum = prd_list.OfType<Product>();
-            var prd = (from p in prdEnum where p.Id.Equals(row) select p).SingleOrDefault();
-
-            prd.IsSelected = false;
-        }
         // 전체 체크 이벤트
         private void chkSelectAll_Checked(object sender, RoutedEventArgs e)
         {
-
-
-
-            //dgTable.Items.OfType<Product>().ToList().ForEach(x => x.IsSelected = true);
-
-            //foreach (var p in dgTable.ItemsSource)
-            //{
-            //    p.IsSelected = true;
-            //}
-
+            foreach(ViewModel.ProductViewModel p in prdView_list)
+            {
+                p.IsSelected = true;
+            }
         }
         // 전체 체크 해제 이벤트
         private void chkSelectAll_Unchecked(object sender, RoutedEventArgs e)
         {
-            //foreach (Product p in dgTable.ItemsSource)
-            //{
-            //    p.IsSelected = false;
-            //}
+            foreach (ViewModel.ProductViewModel p in prdView_list)
+            {
+                p.IsSelected = false;
+            }
         }
     }
 }

@@ -23,44 +23,31 @@
             <Button Name="btnNext" Canvas.Left="460" Canvas.Top="4" Width="60" Height="20">Next</Button>
             <Button Name="btnMyDB" Canvas.Left="530" Canvas.Top="4" Width="60" Height="20" Click="BtnMyDB_Click">내DB확인</Button>
         </Canvas>
-        <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" AutoGenerateColumns="False" VerticalAlignment="Top">
+        <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsSource="{Binding Mode=OneWay, Path=prdView_list}">
             <DataGrid.Columns>
-                <!--<DataGridCheckBoxColumn Binding="{Binding check, UpdateSourceTrigger=PropertyChanged}">
-                    <DataGridCheckBoxColumn.HeaderTemplate>
-                        <DataTemplate>
-                            <CheckBox IsChecked="{Binding RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=local:MainWindow}, Path=Product.AllSelected}">전체</CheckBox>
-                        </DataTemplate>
-                    </DataGridCheckBoxColumn.HeaderTemplate>
-                </DataGridCheckBoxColumn>-->
-                <!--<DataGridTemplateColumn>
+                <DataGridTemplateColumn>
                     <DataGridTemplateColumn.Header>
-                        <CheckBox Name="chkAll" Checked="ChkAll_Checked" Unchecked="ChkAll_Unchecked"/>
+                        <CheckBox Content="" Checked="chkSelectAll_Checked" Unchecked="chkSelectAll_Unchecked"></CheckBox>
                     </DataGridTemplateColumn.Header>
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <CheckBox IsChecked="{Binding check, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked"/>
+                            <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>-->
+                </DataGridTemplateColumn>
                 
-                <DataGridCheckBoxColumn Binding="{Binding IsSelected}">
-                    <DataGridCheckBoxColumn.Header>
-                        <CheckBox Name="chkSelectAll" Checked="chkSelectAll_Checked" Unchecked="chkSelectAll_Unchecked"></CheckBox>
-                    </DataGridCheckBoxColumn.Header>
-                </DataGridCheckBoxColumn>
-                
-                <DataGridTextColumn Header="순서" Binding="{Binding Path=no}" IsReadOnly="True"/>
-                <DataGridTextColumn Header="상품코드" Binding="{Binding Path=id}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="순서" Binding="{Binding Path=Row_idx}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Id}" IsReadOnly="True"/>
                 <DataGridTemplateColumn Header="이미지" Width="80" MaxWidth="80" IsReadOnly="True">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
-                            <Image Source="{Binding Path=image}"></Image>
+                            <Image Source="{Binding Path=Prd_img}"></Image>
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
                 <DataGridTextColumn Header="등록" Binding="{Binding Path=exist}" IsReadOnly="True"/>
                 <DataGridTextColumn Header="분류" Binding="{Binding Path=type}" IsReadOnly="True"/>
-                <DataGridTextColumn Header="상품정보" Binding="{Binding Path=prd_info}" IsReadOnly="True"/>
+                <DataGridTextColumn Header="상품정보" Binding="{Binding Path=DetailYN}" IsReadOnly="True"/>
                 <DataGridTextColumn Header="src" Binding="{Binding Path=src}" MaxWidth="0"/>
                 <DataGridTextColumn Header="alt" Binding="{Binding Path=alt}" MaxWidth="0"/>
             </DataGrid.Columns>
