@@ -133,6 +133,7 @@
     </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="ViewModelBase.cs" />
+    <Compile Include="ViewModel\MyDBViewModel.cs" />
     <Compile Include="ViewModel\ProductViewModel.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

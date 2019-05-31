@@ -6,74 +6,155 @@
         xmlns:local="clr-namespace:webCrawler"
         mc:Ignorable="d"
         Title="타오바오 상품 수집 프로그램" Height="800" Width="1200">
-    <Grid Name="grid">
+    <Grid Name="main_grid">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"></RowDefinition>
-            <RowDefinition Height="5*"></RowDefinition>
-            <RowDefinition Height="2*"></RowDefinition>
+            <RowDefinition Height="1*"></RowDefinition>
             <RowDefinition Height="30"></RowDefinition>
         </Grid.RowDefinitions>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="1*"></ColumnDefinition>
-            <ColumnDefinition Width="350"></ColumnDefinition>
         </Grid.ColumnDefinitions>
+        <!--헤더부분-->
         <Canvas Grid.Row="0" Grid.Column="0" Margin="0,0,0,4">
             <TextBlock Name="txtUrlBrowser" Grid.Row="0" Grid.Column="0" Width="380" Height="20" Canvas.Left="10" Canvas.Top="3"></TextBlock>
-            <Button Name="btnPrev" Canvas.Left="400" Canvas.Top="4" Width="60" Height="20">Prev</Button>
-            <Button Name="btnNext" Canvas.Left="460" Canvas.Top="4" Width="60" Height="20">Next</Button>
-            <Button Name="btnMyDB" Canvas.Left="530" Canvas.Top="4" Width="60" Height="20" Click="BtnMyDB_Click">내DB확인</Button>
+            <Button Name="btnPrev" Canvas.Left="20" Canvas.Top="4" Width="60" Height="20" Click="BtnPrev_Click">Main 화면</Button>
+            <Button Name="btnNext" Canvas.Left="90" Canvas.Top="4" Width="60" Height="20" Click="BtnNext_Click">DB List</Button>
         </Canvas>
-        <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" Grid.RowSpan="2" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsSource="{Binding Mode=OneWay, Path=prdView_list}">
-            <DataGrid.Columns>
-                <DataGridTemplateColumn>
-                    <DataGridTemplateColumn.Header>
-                        <CheckBox Content="" Checked="chkSelectAll_Checked" Unchecked="chkSelectAll_Unchecked"></CheckBox>
-                    </DataGridTemplateColumn.Header>
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                
-                <DataGridTextColumn Header="순서" Binding="{Binding Path=Row_idx}" IsReadOnly="True"/>
-                <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Id}" IsReadOnly="True"/>
-                <DataGridTemplateColumn Header="이미지" Width="80" MaxWidth="80" IsReadOnly="True">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Image Source="{Binding Path=Prd_img}"></Image>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-                <DataGridTextColumn Header="등록" Binding="{Binding Path=exist}" IsReadOnly="True"/>
-                <DataGridTextColumn Header="분류" Binding="{Binding Path=type}" IsReadOnly="True"/>
-                <DataGridTextColumn Header="상품정보" Binding="{Binding Path=DetailYN}" IsReadOnly="True"/>
-                <DataGridTextColumn Header="src" Binding="{Binding Path=src}" MaxWidth="0"/>
-                <DataGridTextColumn Header="alt" Binding="{Binding Path=alt}" MaxWidth="0"/>
-            </DataGrid.Columns>
-        </DataGrid>
-        <Canvas Grid.Row="2" Grid.Column="0">
-            <Button Name="btnParsor" Canvas.Top="10" Canvas.Left="10" Width="100" Height="40" Click="btnParsor_Click">source 분석</Button>
-            <Button Name="btnStoreDB" Canvas.Top="10" Canvas.Left="120" Width="100" Height="40" Click="btnStoreDB_Click">DB 저장</Button>
-            <Button Name="btnGetProductInfo" Canvas.Top="10" Canvas.Left="230" Width="100" Height="40" Click="btnGetProductInfo_Click">상품 가져오기</Button>
-        </Canvas>
-        <Grid Grid.Row="2" Grid.Column="1">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="30"></RowDefinition>
-                <RowDefinition Height="30"></RowDefinition>
-                <RowDefinition Height="30"></RowDefinition>
-                <RowDefinition Height="30"></RowDefinition>
-                <RowDefinition Height="auto"></RowDefinition>
-            </Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="1*"></ColumnDefinition>
-                <ColumnDefinition Width="2*"></ColumnDefinition>
-            </Grid.ColumnDefinitions>
-            <Label Grid.Row="0" Grid.Column="0" VerticalContentAlignment="Center">상품수집 시간</Label>
-            <TextBox Name="txtTimeOut" Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center">10</TextBox>
-        </Grid>
+        <!--헤더부분 끝-->
+        
+        <!--본문 부분 Main -->
+        <DockPanel Name="main_doc" Grid.Row="1" Visibility="Visible">
+            <Grid Name="grid">
+                <Grid.RowDefinitions>
+                    <!--<RowDefinition Height="30"></RowDefinition>-->
+                    <RowDefinition Height="5*"></RowDefinition>
+                    <RowDefinition Height="2*"></RowDefinition>
+                    <!--<RowDefinition Height="30"></RowDefinition>-->
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition Width="350"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsSource="{Binding Mode=OneWay, Path=prdView_list}">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn>
+                            <DataGridTemplateColumn.Header>
+                                <CheckBox Content="" Checked="chkSelectAll_Checked" Unchecked="chkSelectAll_Unchecked"></CheckBox>
+                            </DataGridTemplateColumn.Header>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+
+                        <DataGridTextColumn Header="순서" Binding="{Binding Path=Row_idx}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Id}" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="이미지" Width="80" MaxWidth="80" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding Path=Prd_img}"></Image>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="등록" Binding="{Binding Path=Prd_exist}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상세" Binding="{Binding Path=DetailYN}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="분류" Binding="{Binding Path=Prd_type}" IsReadOnly="True"/>
+                        <!--<DataGridTextColumn Header="src" Binding="{Binding Path=src}" MaxWidth="0"/>
+                        <DataGridTextColumn Header="alt" Binding="{Binding Path=alt}" MaxWidth="0"/>-->
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Canvas Grid.Row="1" Grid.Column="0">
+                    <Button Name="btnParsor" Canvas.Top="10" Canvas.Left="10" Width="100" Height="40" Click="btnParsor_Click">상품가져오기</Button>
+                    <Button Name="btnStoreDB" Canvas.Top="10" Canvas.Left="120" Width="100" Height="40" Click="btnStoreDB_Click">DB 저장</Button>
+                    <Button Name="btnGetProductInfo" Canvas.Top="10" Canvas.Left="230" Width="100" Height="40" Click="btnGetProductInfo_Click">상세정보 수집</Button>
+                    <!--카테고리 이동 버튼 모음-->
+                    <Canvas Name="cnv_category" Canvas.Top="60" Canvas.Left="10" Width="800" Height="100">
+                        <Label Canvas.Top="0" Canvas.Left="5">카테고리 이동 버튼 (로그인 후 사용해 주세요)</Label>
+                        <Button Name="btn_main" Width="60" Height="70" Canvas.Top="30" Canvas.Left="660" Click="btn_main_Click" Content="Main&#x0a;화면"></Button>
+                        <Button Name="cate_1" Width="100" Height="30" Canvas.Top="30" Canvas.Left="0" Click="category_Click">女装精品</Button>
+                        <Button Name="cate_2" Width="100" Height="30" Canvas.Top="30" Canvas.Left="110" Click="category_Click">内衣/男装</Button>
+                        <Button Name="cate_3" Width="100" Height="30" Canvas.Top="30" Canvas.Left="220" Click="category_Click">鞋品/箱包</Button>
+                        <Button Name="cate_4" Width="100" Height="30" Canvas.Top="30" Canvas.Left="330" Click="category_Click">饰品/配件</Button>
+                        <Button Name="cate_5" Width="100" Height="30" Canvas.Top="30" Canvas.Left="440" Click="category_Click">运动/户外</Button>
+                        <Button Name="cate_6" Width="100" Height="30" Canvas.Top="30" Canvas.Left="550" Click="category_Click">家具/家电</Button>
+                        <Button Name="cate_7" Width="100" Height="30" Canvas.Top="70" Canvas.Left="0" Click="category_Click">居家/家纺</Button>
+                        <Button Name="cate_8" Width="100" Height="30" Canvas.Top="70" Canvas.Left="110" Click="category_Click">手机/数码</Button>
+                        <Button Name="cate_9" Width="100" Height="30" Canvas.Top="70" Canvas.Left="220" Click="category_Click">汽车/家电/旅行</Button>
+                        <Button Name="cate_10" Width="100" Height="30" Canvas.Top="70" Canvas.Left="330" Click="category_Click">母婴/玩具</Button>
+                        <Button Name="cate_11" Width="100" Height="30" Canvas.Top="70" Canvas.Left="440" Click="category_Click">办公/娱乐</Button>
+                        <Button Name="cate_12" Width="100" Height="30" Canvas.Top="70" Canvas.Left="550" Click="category_Click">美妆/个护</Button>
+                    </Canvas>
+                </Canvas>
+                <Grid Grid.Row="1" Grid.Column="1">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30"></RowDefinition>
+                        <RowDefinition Height="30"></RowDefinition>
+                        <RowDefinition Height="30"></RowDefinition>
+                        <RowDefinition Height="30"></RowDefinition>
+                        <RowDefinition Height="auto"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
+                        <ColumnDefinition Width="2*"></ColumnDefinition>
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Row="0" Grid.Column="0" VerticalContentAlignment="Center">상품수집 시간</Label>
+                    <TextBox Name="txtTimeOut" Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center">10</TextBox>
+                </Grid>
+            </Grid>
+        </DockPanel>
+        <!--본문 부분 Main 끝-->
+        
+        <!--본문 부분 MyDB-->
+        <DockPanel Name="myDb_doc" Grid.Row="1" Visibility="Collapsed">
+            <Grid Name="mydb_grid">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="5*"></RowDefinition>
+                    <RowDefinition Height="1*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <DataGrid Name="dgMyDB" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Top">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn>
+                            <DataGridTemplateColumn.Header>
+                                <CheckBox Name="chkMyDb" Content="" Checked="ChkMyDb_Checked" Unchecked="ChkMyDb_Unchecked"></CheckBox>
+                            </DataGridTemplateColumn.Header>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="순서" Binding="{Binding Path=Num}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Id}" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="대표이미지" Width="80" MaxWidth="80" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding Path=Prd_img}"></Image>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="카테고리" Binding="{Binding Path=Prd_category}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품명" Binding="{Binding Path=Prd_name}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품속성" Binding="{Binding Path=Prd_attr}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품가격" Binding="{Binding Path=Prd_price}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품옵션" Binding="{Binding Path=Prd_opt}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품재고" Binding="{Binding Path=Prd_stock}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상세이미지" Binding="{Binding Path=Detail_img}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="생성일" Binding="{Binding Path=Created_date}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="수정일" Binding="{Binding Path=Updated_date}" IsReadOnly="True"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Canvas Grid.Row="1">
+                    <Button Name="btnDownloadExcel" Canvas.Top="10" Canvas.Left="10" Width="80" Height="40" Content="엑셀&#x0a;다운로드" Click="BtnDownloadExcel_Click"></Button>
+                </Canvas>
+            </Grid>
+        </DockPanel>
+        <!--본문 부분 MyDB 끝-->
+
+        <!--하단 부분-->
         <TextBlock Name="txtStatus" Grid.Row="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="10, 0, 0, 0">타오바오 상품수집 프로그램</TextBlock>
-        <!--<Label Canvas.Top="10" Canvas.Left="10" Height="30" VerticalContentAlignment="Center">검색시간</Label>
-            <TextBox Name="txtTimeout" Canvas.Top="10" Canvas.Left="73" Width="50" Height="30" VerticalContentAlignment="Center"></TextBox>-->
+        <!--하단부분 끝-->
     </Grid>
+    
 </Window>
