@@ -9,6 +9,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -114,7 +115,7 @@ namespace webCrawler
 
                 BitmapImage bi = new BitmapImage();
                 HtmlDocument item = new HtmlDocument();
-                string nid, src, alt, detailYn, isExist;
+                string nid, src, prd_name, detailYn, isExist;
                 foreach (var node in nodes)
                 {
                     item = new HtmlDocument();
@@ -132,7 +133,7 @@ namespace webCrawler
                                      select prd).SingleOrDefault();
 
                         src = img[0].Attributes["data-src"].Value;
-                        alt = img[0].Attributes["alt"].Value;
+                        prd_name = img[0].Attributes["alt"].Value;
 
                         id_list.Add(nid);
                         bi = new BitmapImage();
@@ -158,7 +159,7 @@ namespace webCrawler
                             detailYn,   // 상세정부수집 여부 : 'O, X'
                             isExist,    // 상품등록여부 : 'O, X'
                             "",         // 등록타입 : '[New], [Updated]'
-                            "",         // 상품명, 여기서는 크게 필요 없음.
+                            prd_name,         // 상품명
                             category    // 카테고리
                             )
                         );
@@ -356,61 +357,163 @@ namespace webCrawler
         {
             MySqlConnection conn = null;
             List<string> item = new List<string>();
-            try
+            //try
+            //{
+            StringBuilder sINSERT = new StringBuilder("INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES ");
+            StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_img, prd_name, prd_category, created_date) VALUES ");
+            List<string> insert_rows = new List<string>();
+            List<string> update_rows = new List<string>();
+            using (MySqlConnection mConn = new MySqlConnection(strConn))
             {
-                conn = new MySqlConnection(strConn);
-                MySqlCommand cmd = new MySqlCommand();
-                cmd.Connection = conn;
-                conn.Open();
-                cmd.Prepare();
-                cmd.Parameters.Add("@id", MySqlDbType.String);
-                cmd.Parameters.Add("@prd_img", MySqlDbType.String);
-                cmd.Parameters.Add("@prd_name", MySqlDbType.String);
-                cmd.Parameters.Add("@prd_category", MySqlDbType.String);
-                cmd.Parameters.Add("@created_date", MySqlDbType.String);
-                cmd.Parameters.Add("@updated_date", MySqlDbType.String);
-
-                //IEnumerable list = dgTable.ItemsSource as IEnumerable;
-                foreach (ViewModel.ProductViewModel row in prdView_list)
+                try
                 {
-                    cmd.CommandText = "SELECT id FROM taobao_goods WHERE id = @id";
-                    cmd.Parameters["@id"].Value = row.Id;
-                    MySqlDataReader reader = cmd.ExecuteReader();
-                    bool isEmpty = reader.Read();
-                    reader.Close();
-                    if (!isEmpty)
+                    foreach (ViewModel.ProductViewModel row in prdView_list)
                     {
-                        cmd.CommandText = "INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES(@id, @prd_img, @prd_name, @prd_category, @created_date);";
-                        cmd.Parameters["@id"].Value = row.Id;
-                        cmd.Parameters["@prd_img"].Value = row.Prd_img;
-                        cmd.Parameters["@prd_name"].Value = row.Prd_name;
-                        cmd.Parameters["@prd_category"].Value = row.Prd_category;
-                        cmd.Parameters["@created_date"].Value = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                        //cmd.ExecuteNonQuery();
-                        row.Prd_type = "[Insert]";
+                        if (row.Prd_exist != "O")
+                        {
+                            insert_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}')",
+                                MySqlHelper.EscapeString(row.Id),                              // 상품코드
+                                MySqlHelper.EscapeString(row.Prd_img.ToString()),   // 상품이미지
+                                MySqlHelper.EscapeString(row.Prd_name),                 // 상품명
+                                MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
+                                MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))      // 생성일
+                                )
+                            );
+                            row.Prd_exist = "O";
+                            row.Prd_type = "[New!!]";
+                        }
+                        else
+                        {
+                            update_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}')",
+                                MySqlHelper.EscapeString(row.Id),                              // 상품코드
+                                MySqlHelper.EscapeString(row.Prd_img.ToString()),   // 상품이미지
+                                MySqlHelper.EscapeString(row.Prd_name),                 // 상품명
+                                MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
+                                MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))      // 생성일
+                                )
+                            );
+                            row.Prd_type = "[Updated]";
+                        }
                     }
-                    else
+                    mConn.Open();
+                    #region 신규 상품 등록
+                    if(insert_rows.Count > 0)
                     {
-                        cmd.CommandText = "UPDATE taobao_goods SET prd_img = @prd_img, prd_name = @prd_name, prd_category = @prd_category, updated_date = @updated_date WHERE id = @id";
-                        cmd.Parameters["@id"].Value = row.Id;
-                        cmd.Parameters["@prd_img"].Value = row.Prd_img;
-                        cmd.Parameters["@prd_name"].Value = row.Prd_name;
-                        cmd.Parameters["@prd_category"].Value = row.Prd_category;
-                        cmd.Parameters["@updated_date"].Value = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                        //cmd.ExecuteNonQuery();
-                        row.Prd_type = "[Updated]";
+                        sINSERT.Append(string.Join(",", insert_rows));
+                        sINSERT.Append(";");
+                        using (MySqlCommand myCmd = new MySqlCommand(sINSERT.ToString(), mConn))
+                        {
+                            myCmd.CommandType = CommandType.Text;
+                            myCmd.CommandTimeout = 1000;
+                            myCmd.ExecuteNonQuery();
+                        }
                     }
-                    row.Prd_exist = "O";
+                    #endregion
 
-                    item.Add(row.Id);
-                    //getDetail(id);
+                    #region 기존 상품 UPDATE
+                    if(update_rows.Count > 0)
+                    {
+                        string tmpCreate = "CREATE TABLE tmp(id VARCHAR(20), prd_img VARCHAR(200), prd_name VARCHAR(100), prd_category VARCHAR(45), created_date VARCHAR(45)) " +
+                            "DEFAULT CHARACTER SET = utf8 " +
+                            "COLLATE = utf8_bin;";
+                        MySqlCommand myCmdTemp = new MySqlCommand(tmpCreate, mConn);
+                        myCmdTemp.CommandTimeout = 1000;
+                        myCmdTemp.ExecuteNonQuery();
+
+                        sUPDATE.Append(string.Join(",", update_rows));
+                        sUPDATE.Append(";");
+                        using (MySqlCommand myCmd = new MySqlCommand(sUPDATE.ToString(), mConn))
+                        {
+                            myCmd.CommandType = CommandType.Text;
+                            myCmd.CommandTimeout = 1000;
+                            myCmd.ExecuteNonQuery();
+
+                            myCmd.CommandText = string.Format(
+                                "UPDATE tmp T INNER JOIN taobao_goods TB ON T.id = TB.id " +
+                                "SET TB.prd_img = T.prd_img, TB.prd_name = T.prd_name, TB.prd_category = T.prd_category, TB.updated_date = '{0}'; " +
+                                "DROP TABLE tmp;",
+                                DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                            );
+                            myCmd.ExecuteNonQuery();
+                        }
+                    }
+
+                    #endregion
+
+                    MessageBox.Show(string.Format("저장 성공! \n신규 상품 {0}개 등록. \n기존 상품 {1}개 업데이트 되었습니다.", insert_rows.Count, update_rows.Count));
                 }
-                MessageBox.Show("DB 저장 완료");
+                catch(Exception ex) 
+                {
+                    MessageBox.Show(ex.ToString());
+                    throw ex;
+                }
+                finally
+                {
+                    if (mConn != null) mConn.Close();
+                }
             }
-            finally
-            {
-                if (conn != null) conn.Close();
-            }
+
+
+
+                //conn = new MySqlConnection(strConn);
+                //MySqlCommand cmd = new MySqlCommand();
+
+
+
+                //cmd.Connection = conn;
+                //conn.Open();
+                //cmd.Prepare();
+                //cmd.Parameters.Add("@id", MySqlDbType.String);
+                //cmd.Parameters.Add("@prd_img", MySqlDbType.String);
+                //cmd.Parameters.Add("@prd_name", MySqlDbType.String);
+                //cmd.Parameters.Add("@prd_category", MySqlDbType.String);
+                //cmd.Parameters.Add("@created_date", MySqlDbType.String);
+                //cmd.Parameters.Add("@updated_date", MySqlDbType.String);
+
+                ////IEnumerable list = dgTable.ItemsSource as IEnumerable;
+                //foreach (ViewModel.ProductViewModel row in prdView_list)
+                //{
+                //    cmd.CommandText = "SELECT id FROM taobao_goods WHERE id = @id";
+                //    cmd.Parameters["@id"].Value = row.Id;
+                //    MySqlDataReader reader = cmd.ExecuteReader();
+                //    bool isEmpty = reader.Read();
+                //    reader.Close();
+                //    if (!isEmpty)
+                //    {
+                //        insert_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}')", MySqlHelper.EscapeString(row.Id), MySqlHelper.EscapeString(row.Prd_img.ToString()), MySqlHelper.EscapeString(row.Prd_name),
+                //            MySqlHelper.EscapeString(row.Prd_category), MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))));
+                //        cmd.CommandText = "INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES(@id, @prd_img, @prd_name, @prd_category, @created_date);";
+                //        cmd.Parameters["@id"].Value = row.Id;
+                //        cmd.Parameters["@prd_img"].Value = row.Prd_img;
+                //        cmd.Parameters["@prd_name"].Value = row.Prd_name;
+                //        cmd.Parameters["@prd_category"].Value = row.Prd_category;
+                //        cmd.Parameters["@created_date"].Value = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                //        //cmd.ExecuteNonQuery();
+                //        row.Prd_type = "[Insert]";
+                //    }
+                //    else
+                //    {
+                //        cmd.CommandText = "UPDATE taobao_goods SET prd_img = @prd_img, prd_name = @prd_name, prd_category = @prd_category, updated_date = @updated_date WHERE id = @id";
+                //        cmd.Parameters["@id"].Value = row.Id;
+                //        cmd.Parameters["@prd_img"].Value = row.Prd_img;
+                //        cmd.Parameters["@prd_name"].Value = row.Prd_name;
+                //        cmd.Parameters["@prd_category"].Value = row.Prd_category;
+                //        cmd.Parameters["@updated_date"].Value = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                //        //cmd.ExecuteNonQuery();
+                //        row.Prd_type = "[Updated]";
+                //    }
+                //    row.Prd_exist = "O";
+
+                //    item.Add(row.Id);
+                //    //getDetail(id);
+                //}
+
+                //MessageBox.Show("DB 저장 완료");
+            //}
+            //finally
+            //{
+            //    if (conn != null) conn.Close();
+            //}
         }
         // 상품정보 가져오기
         private async void btnGetProductInfo_Click(object sender, RoutedEventArgs e)
