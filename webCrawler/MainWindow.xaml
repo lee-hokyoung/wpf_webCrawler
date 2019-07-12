@@ -17,12 +17,13 @@
         </Grid.ColumnDefinitions>
         <!--헤더부분-->
         <Canvas Grid.Row="0" Grid.Column="0" Margin="0,0,0,4">
-            <TextBlock Name="txtUrlBrowser" Grid.Row="0" Grid.Column="0" Width="380" Height="20" Canvas.Left="10" Canvas.Top="3"></TextBlock>
+            <TextBlock Name="txtUrlBrowser" Grid.Row="0" Grid.Column="0" Width="380" Height="20" Canvas.Left="10" Canvas.Top="4"></TextBlock>
             <Button Name="btnPrev" Canvas.Left="20" Canvas.Top="4" Width="60" Height="20" Click="BtnPrev_Click">Main 화면</Button>
             <Button Name="btnNext" Canvas.Left="90" Canvas.Top="4" Width="60" Height="20" Click="BtnNext_Click">DB List</Button>
+            <Button Name="btnCtrlDelPrd" Canvas.Left="160" Canvas.Top="4" Width="80" Height="20" Click="BtnCtrlDelPrd_Click">제외상품관리</Button>
         </Canvas>
         <!--헤더부분 끝-->
-        
+
         <!--본문 부분 Main -->
         <DockPanel Name="main_doc" Grid.Row="1" Visibility="Visible">
             <Grid Name="grid">
@@ -33,7 +34,7 @@
                     <!--<RowDefinition Height="30"></RowDefinition>-->
                 </Grid.RowDefinitions>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition/>
                     <ColumnDefinition Width="350"></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <DataGrid Name="dgTable" Grid.Row="0" Grid.Column="1" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsSource="{Binding Mode=OneWay, Path=prdView_list}">
@@ -96,16 +97,26 @@
                         <RowDefinition Height="auto"></RowDefinition>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="1*"></ColumnDefinition>
                         <ColumnDefinition Width="2*"></ColumnDefinition>
+                        <ColumnDefinition Width="3*"></ColumnDefinition>
+                        <ColumnDefinition Width="2*"></ColumnDefinition>
+                        <ColumnDefinition Width="1*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
-                    <Label Grid.Row="0" Grid.Column="0" VerticalContentAlignment="Center">상품수집 시간</Label>
-                    <TextBox Name="txtTimeOut" Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center">10</TextBox>
+                    <!--상품 수집 시간-->
+                    <Button Name="btnClearPrdList" Click="BtnClearPrdList_Click">목록 비우기</Button>
+                    <!--<Label Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" HorizontalContentAlignment="Right">상품수집 시간</Label>
+                    <TextBox Name="txtTimeOut" Grid.Row="0" Grid.Column="2" VerticalContentAlignment="Center" >10</TextBox>
+                    <Label Grid.Row="0" Grid.Column="3" VerticalContentAlignment="Center">초</Label>-->
+                    <!--중국 위완화 -> 한국 원화 환율-->
+                    <!--<Label Grid.Row="1" Grid.Column="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Right">1 중국 위완화</Label>
+                    <TextBox Name="txtExChange" Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center">170.62</TextBox>
+                    <Label Grid.Row="1" Grid.Column="2" VerticalContentAlignment="Center">원</Label>-->
+                    
                 </Grid>
             </Grid>
         </DockPanel>
         <!--본문 부분 Main 끝-->
-        
+
         <!--본문 부분 MyDB-->
         <DockPanel Name="myDb_doc" Grid.Row="1" Visibility="Collapsed">
             <Grid Name="mydb_grid">
@@ -113,7 +124,7 @@
                     <RowDefinition Height="5*"></RowDefinition>
                     <RowDefinition Height="1*"></RowDefinition>
                 </Grid.RowDefinitions>
-                <DataGrid Name="dgMyDB" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Top">
+                <DataGrid Name="dgMyDB" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsPanel="{Binding Mode=OneWay, Path=myDBView_list}">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn>
                             <DataGridTemplateColumn.Header>
@@ -121,40 +132,110 @@
                             </DataGridTemplateColumn.Header>
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <CheckBox IsChecked="{Binding IsSelected}"/>
+                                    <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
                         <DataGridTextColumn Header="순서" Binding="{Binding Path=Num}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Id}" IsReadOnly="True"/>
-                        <DataGridTemplateColumn Header="대표이미지" Width="80" MaxWidth="80" IsReadOnly="True">
+                        <DataGridTextColumn Header="상품명" Binding="{Binding Path=Prd_name}" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="상품이미지" Width="80" MaxWidth="80" IsReadOnly="True">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
                                     <Image Source="{Binding Path=Prd_img}"></Image>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="공급가격" Binding="{Binding Path=Prd_price}" IsReadOnly="True"/>
+                        <!--<DataGridTextColumn Header="판매가격" Binding="{Binding Path=Prd_price_won}" IsReadOnly="True"/>-->
+                        <DataGridTextColumn Header="시중가격" Binding="{Binding Path=Prd_promo}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="옵션명1" Binding="{Binding Path=Opt_1}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="옵션항목1" Binding="{Binding Path=Opt_val_1}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="옵션명2" Binding="{Binding Path=Opt_2}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="옵션항목2" Binding="{Binding Path=Opt_val_2}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="옵션명3" Binding="{Binding Path=Opt_3}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="옵션항목3" Binding="{Binding Path=Opt_val_3}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품상세설명" Binding="{Binding Path=Detail_img}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="신상세설명" Binding="{Binding Path=Detail_img}" IsReadOnly="True"  Visibility="Collapsed"/>
                         <DataGridTextColumn Header="카테고리" Binding="{Binding Path=Prd_category}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="상품명" Binding="{Binding Path=Prd_name}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="상품속성" Binding="{Binding Path=Prd_attr}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="상품가격" Binding="{Binding Path=Prd_price}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="상품옵션" Binding="{Binding Path=Prd_opt}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="상품재고" Binding="{Binding Path=Prd_stock}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="상세이미지" Binding="{Binding Path=Detail_img}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="생성일" Binding="{Binding Path=Created_date}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="수정일" Binding="{Binding Path=Updated_date}" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
                 <Canvas Grid.Row="1">
                     <Button Name="btnDownloadExcel" Canvas.Top="10" Canvas.Left="10" Width="80" Height="40" Content="엑셀&#x0a;다운로드" Click="BtnDownloadExcel_Click"></Button>
+                    <Button Name="btnDelProduct" Canvas.Top="10" Canvas.Left="100" Width="80" Height="40" Content="수집제외" Click="BtnDelProduct_Click"></Button>
                 </Canvas>
             </Grid>
         </DockPanel>
         <!--본문 부분 MyDB 끝-->
 
+        <!--제외상품관리 부분-->
+        <DockPanel Name="doc_CtrlDelPrd" Grid.Row="1" Visibility="Collapsed">
+            <Grid Name="grdCtrlDelPrd">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="5*"></RowDefinition>
+                    <RowDefinition Height="2*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <DataGrid Name="dgCtrlDelPrd" Grid.Row="0" AutoGenerateColumns="false" VerticalAlignment="Top" ItemsSource="{Binding Mode=OneWay, Path=delPrd_list}">
+                    <DataGrid.Columns>
+                        <DataGridTemplateColumn>
+                            <DataGridTemplateColumn.Header>
+                                <CheckBox Name="chkCtrlDel" Content="" Checked="ChkCtrlDel_Checked" Unchecked="ChkCtrlDel_Unchecked"></CheckBox>
+                            </DataGridTemplateColumn.Header>
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" />
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                        <DataGridTextColumn Header="순서" Binding="{Binding Path=Num}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Id}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품명" Binding="{Binding Path=Prd_name}" IsReadOnly="True"/>
+                        <DataGridTemplateColumn Header="상품이미지" Width="80" MaxWidth="80" IsReadOnly="True">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Image Source="{Binding Path=Prd_img}"></Image>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
+                    </DataGrid.Columns>
+                </DataGrid>
+                <Canvas Grid.Row="1">
+                    <Button Name="btnReleaseProduct" Canvas.Top="10" Canvas.Left="10" Width="80" Height="40" Content="수집제외해제" Click="BtnReleaseProduct_Click"></Button>
+                </Canvas>
+            </Grid>
+        </DockPanel>
+        <!--제외상품관리 부분 끝-->
+        <DockPanel Name="doc_opacity" Grid.Row="1" Visibility="Collapsed" Opacity=".5" Background="gray"></DockPanel>
+        <!--상태표시 도커-->
+        <DockPanel Name="doc_status" Grid.Row="1" Visibility="Collapsed">
+            <Grid Name="grid_status" Width="400" Height="150">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"></RowDefinition>
+                    <RowDefinition Height="2*"></RowDefinition>
+                    <RowDefinition Height="3*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <TextBlock VerticalAlignment="Center" HorizontalAlignment="Center"></TextBlock>
+                <Border Grid.Row="0" BorderBrush="Black" BorderThickness="1">
+                    <StackPanel Background="Gray">
+                        <Label Content="상품수집 현황" VerticalAlignment="Center" HorizontalAlignment="Center" Foreground="White"></Label>
+                    </StackPanel>
+                </Border>
+                <Border Grid.Row="1" BorderThickness="1,0,1,0" BorderBrush="Black" Background="White">
+                    <TextBlock Name="txt_crawling_count" VerticalAlignment="Center" HorizontalAlignment="Center">1/10 수집 중</TextBlock>
+                </Border>
+                <Border Grid.Row="2" BorderThickness="1,0,1,1" BorderBrush="Black" Background="White">
+                    <TextBlock Name="txt_crawling_status" VerticalAlignment="Top" HorizontalAlignment="Center">상품수집중</TextBlock>
+                </Border>
+            </Grid>
+        </DockPanel>
+        <!--상태표시 도커 끝 -->
         <!--하단 부분-->
         <TextBlock Name="txtStatus" Grid.Row="3" Grid.ColumnSpan="2" VerticalAlignment="Center" Margin="10, 0, 0, 0">타오바오 상품수집 프로그램</TextBlock>
         <!--하단부분 끝-->
     </Grid>
-    
+
 </Window>

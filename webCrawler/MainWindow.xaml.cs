@@ -2,10 +2,12 @@
 using CefSharp.Wpf;
 using HtmlAgilityPack;
 using MySql.Data.MySqlClient;
+using PuppeteerSharp;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -28,15 +30,24 @@ namespace webCrawler
         public string strConn = Properties.Settings.Default.strConn;
         public string strHtml = "", detailHtml = "";
         public List<string> html_node = null;
+        public List<string> error_logs = null;
         public string main_url = "https://world.taobao.com/";
         public string login_url = "https://world.taobao.com/markets/all/login";
-        
+
+        // 상품리스트 파싱하기 & prd_list 에 저장하기
+        ArrayList prd_list = new ArrayList();           // Product 클래스를 담아두는 ArrayList
+        List<string> id_list = new List<string>();      // 상품 중복 파싱을 방지하기 위한 상품코드 저장하는 List
+        List<ViewModel.ProductViewModel> prdView_list = new List<ViewModel.ProductViewModel>();
+        int idx = 1;
+
+        // 제외상품 리스트 관련 변수
+        List<ViewModel.delProductViewModel> delPrdView_list = new List<ViewModel.delProductViewModel>();
+
         public MainWindow()
         {
             InitializeComponent();
             this.DataContext = new ViewModel.ProductViewModel();
             InitializeChromium();
-            //Window_Loaded();
             getDbData();
         }
         private void InitializeChromium()
@@ -70,7 +81,8 @@ namespace webCrawler
                 browser.GetSourceAsync().ContinueWith(task =>
                 {
                     strHtml = task.Result;
-                    if (strHtml.IndexOf("描述加载中") == -1 && html_node != null)
+                    //if (strHtml.IndexOf("描述加载中") == -1 && html_node != null)
+                    if (strHtml.IndexOf("tstart") > -1 && html_node != null)
                     {
                         detailHtml = task.Result;
                         //browser.ViewSource();
@@ -79,7 +91,6 @@ namespace webCrawler
                 });
             }
         }
-
         private void WebZBrowserFrameLoadEnded(object sender, FrameLoadEndEventArgs e)
         {
             if (e.Frame.IsMain)
@@ -101,6 +112,7 @@ namespace webCrawler
             try
             {
                 // 카테고리 구하기. 현재 URL의 파라미터 중 q 값을 가져옴. URL DECODER가 필요함
+                if (browser.Address.Split('?').Length < 2) return;
                 string[] cate_arr = browser.Address.Split('?')[1].Split('&');
                 string category = "";
                 foreach(string name in cate_arr)
@@ -115,7 +127,7 @@ namespace webCrawler
 
                 BitmapImage bi = new BitmapImage();
                 HtmlDocument item = new HtmlDocument();
-                string nid, src, prd_name, detailYn, isExist;
+                string nid, src, prd_name, detailYn, isExist, prd_status;
                 foreach (var node in nodes)
                 {
                     item = new HtmlDocument();
@@ -131,6 +143,12 @@ namespace webCrawler
                         var query = (from Prd_Store prd in db_list
                                      where prd.Id == nid
                                      select prd).SingleOrDefault();
+                        // 상품상태 확인
+                        if (query != null) {
+                            if(query.Prd_status == "9") continue;
+                            prd_status = query.Prd_status;
+                        } 
+                        else prd_status = "";
 
                         src = img[0].Attributes["data-src"].Value;
                         prd_name = img[0].Attributes["alt"].Value;
@@ -160,7 +178,8 @@ namespace webCrawler
                             isExist,    // 상품등록여부 : 'O, X'
                             "",         // 등록타입 : '[New], [Updated]'
                             prd_name,         // 상품명
-                            category    // 카테고리
+                            category,    // 카테고리
+                            prd_status  // 상품상태
                             )
                         );
                     }
@@ -185,28 +204,23 @@ namespace webCrawler
 
         private void parsingPrdDetail(List<string> html_node)
         {
-            HtmlDocument doc = null, doc_li = null, doc_img = null;
-            HtmlNodeCollection attributes = null, img_wrap = null, imgs = null, lis = null, price = null, opts = null, stock = null;
-            string[] strAttr = null, strImg = null, strOpt = null;
-            string sql_id = "", sql_stock = "", sql_prd_name = "", sql_prd_attr = "", sql_detail_yn = "", sql_prd_price = "", sql_prd_opt = "", sql_detail_img = ""
-                , sql_created_date = "", sql_updated_date = "", sql_user_id = "";
+            HtmlDocument doc = null, doc_img = null;
+            HtmlNodeCollection img_wrap = null, imgs = null, price = null, promo = null, opts = null, stock = null, attr = null, additional_image = null;
+            string[] strImg = null;
+
+            StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_price, prd_promo, prd_stock, detail_img, " +
+                "opt_1, opt_val_1, opt_2, opt_val_2, opt_3, opt_val_3, prd_attr, add_img_1, add_img_2, add_img_3, add_img_4, updated_date) VALUES ");
+            string sql_id = "", sql_prd_price = "", sql_prd_promo = "", sql_prd_stock = "", sql_detail_img = "";
+            string sql_opt_1 = "", sql_opt_val_1 = "", sql_opt_2 = "", sql_opt_val_2 = "", sql_opt_3 = "", sql_opt_val_3 = "", sql_prd_attr = "",
+                sql_add_img_1 = "", sql_add_img_2 ="", sql_add_img_3 = "", sql_add_img_4 = "";
+            List<string> update_rows = new List<string>();
 
             MySqlConnection conn = null;
+
             try
             {
+                txt_crawling_status.Text = "DB 저장 중";
                 conn = new MySqlConnection(strConn);
-                MySqlCommand cmd = new MySqlCommand();
-                cmd.Connection = conn;
-                conn.Open();
-                cmd.Prepare();
-                cmd.Parameters.Add("@id", MySqlDbType.String);
-                cmd.Parameters.Add("@prd_name", MySqlDbType.String);
-                cmd.Parameters.Add("@prd_attr", MySqlDbType.String);
-                cmd.Parameters.Add("@prd_price", MySqlDbType.String);
-                cmd.Parameters.Add("@prd_stock", MySqlDbType.String);
-                cmd.Parameters.Add("@prd_opt", MySqlDbType.String);
-                cmd.Parameters.Add("@detail_img", MySqlDbType.String);
-                cmd.Parameters.Add("@updated_date", MySqlDbType.String);
 
                 foreach (var node in html_node)
                 {
@@ -216,20 +230,7 @@ namespace webCrawler
 
                     sql_id = doc.DocumentNode.SelectNodes("//div[@id='LineZing']")[0].Attributes["itemid"].Value;
 
-                    attributes = doc.DocumentNode.SelectNodes("//div[@class='attributes']");
-                    if (attributes != null)
-                    {
-                        doc_li = new HtmlDocument();
-                        doc_li.LoadHtml(attributes[0].InnerHtml);
-                        lis = doc_li.DocumentNode.SelectNodes("//li");
-                        strAttr = new string[lis.Count];
-                        for (var i = 0; i < lis.Count; i++)
-                        {
-                            strAttr[i] = lis[i].InnerHtml;
-                        }
-                        sql_prd_attr = String.Join("&$%", strAttr);
-                    }
-                    // 상품이미지 : prd_img
+                    // 상품 상세 이미지 : prd_img
                     img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
                     if (img_wrap != null)
                     {
@@ -241,46 +242,156 @@ namespace webCrawler
                             strImg = new string[imgs.Count];
                             for (var i = 0; i < imgs.Count; i++)
                             {
-                                strImg[i] = imgs[i].Attributes["data-ks-lazyload"].Value;
+                                strImg[i] = string.Format("<img src='{0}'>",  imgs[i].Attributes["data-ks-lazyload"].Value);
                             }
-                            sql_detail_img = String.Join("&$%", strImg);
+                            //sql_detail_img = String.Join("&$%", strImg);
+                            sql_detail_img = String.Join("", strImg);
                         }
                     }
-
-                    // 상품 가격 : prd_price
-                    price = doc.DocumentNode.SelectNodes("//div[@class='tm-promo-price']/span");
+                    // 타오바오 상품가격 : prd_price
+                    price = doc.DocumentNode.SelectNodes("//dl[@class='tm-price-panel']/dd/span");
                     if (price != null) sql_prd_price = price[0].InnerText;
 
-                    // 상품 옵션 : prd_opt
-                    opts = doc.DocumentNode.SelectNodes("//ul[contains(@class, 'J_TSaleProp')]/li");
+                    // 프로모션 가격(할인된 가격, 판매가격) : prd_promo
+                    promo = doc.DocumentNode.SelectNodes("//div[@class='tm-promo-price']/span");
+                    if (promo != null) sql_prd_promo = promo[0].InnerText;
+
+                    // 상품 옵션
+                    opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-sale-prop')]");
                     if (opts != null)
                     {
-                        strOpt = new string[opts.Count];
+                        List<string> str_opts_value = new List<string>(); // 옵션 값을 담아두는 변수 선언
+                        string opt_val = "";    // 옵션명을 담아두는 변수
                         for (var i = 0; i < opts.Count; i++)
                         {
-                            strOpt[i] = opts[i].InnerText.Replace("\n", "").Replace("\t", "");
+                            string opt_name = opts[i].ChildNodes["dt"].InnerHtml;
+                            HtmlNodeCollection opt_vals = opts[i].ChildNodes["dd"].ChildNodes["ul"].SelectNodes("li");
+                            str_opts_value = new List<string>();
+                            foreach (HtmlNode child in opt_vals)
+                            {
+                                str_opts_value.Add(child.ChildNodes["a"].ChildNodes["span"].InnerText);
+                            }
+                            opt_val = string.Join( ",", str_opts_value); //  옵션값 -> 콤마(,)로 구분함.
+                            switch (i)
+                            {
+                                case 0:
+                                    sql_opt_1 = opt_name;
+                                    sql_opt_val_1 = opt_val;
+                                    break;
+                                case 1:
+                                    sql_opt_2 = opt_name;
+                                    sql_opt_val_2 = opt_val;
+                                    break;
+                                case 2:
+                                    sql_opt_3 = opt_name;
+                                    sql_opt_val_3 = opt_val;
+                                    break;
+                            }
                         }
-                        sql_prd_opt = String.Join("&$%", strOpt);
                     }
 
                     // 상품 재고 : J_SpanStock
                     stock = doc.DocumentNode.SelectNodes("//em[@id='J_EmStock']");
-                    if(stock != null) sql_stock = stock[0].InnerHtml;
-                    //doc.DocumentNode.SelectSingleNode
+                    if(stock != null) sql_prd_stock = stock[0].InnerHtml;
 
-                    cmd.CommandText = "UPDATE taobao_goods SET " +
-                        "detail_yn = 1, prd_attr = @prd_attr, prd_price = @prd_price, prd_opt = @prd_opt, detail_img = @detail_img, updated_date = @updated_date, " +
-                        "prd_stock = @prd_stock " +
-                        "WHERE id = @id";
-                    cmd.Parameters["@id"].Value = sql_id;
-                    cmd.Parameters["@prd_attr"].Value = sql_prd_attr;
-                    cmd.Parameters["@prd_price"].Value = sql_prd_price;
-                    cmd.Parameters["@prd_opt"].Value = sql_prd_opt;
-                    cmd.Parameters["@prd_stock"].Value = sql_stock;
-                    cmd.Parameters["@detail_img"].Value = sql_detail_img;
-                    cmd.Parameters["@updated_date"].Value = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    // 상품 세부 정보
+                    attr = doc.DocumentNode.SelectNodes("//ul[@id='J_AttrUL']/li");
+                    if (attr != null)
+                    {
+                        List<string> attr_list = new List<string>();
+                        foreach (HtmlNode item in attr)
+                        {
+                            attr_list.Add(item.InnerText.Replace("&nbsp;", ""));
+                        }
+                        sql_prd_attr = string.Join(",", attr_list);
+                    }
+                    // 상품 추가 이미지
+                    additional_image = doc.DocumentNode.SelectNodes("//ul[@id='J_UlThumb']/li/a/img");
+                    if(additional_image.Count > 0)
+                    {
+                        int idx = 0;
+                        sql_add_img_1 = ""; sql_add_img_2 = ""; sql_add_img_3 = ""; sql_add_img_4 = "";
+                        foreach (HtmlNode item in additional_image)
+                        {
+                            idx++;
+                            switch (idx)
+                            {
+                                case 1: sql_add_img_1 = item.OuterHtml; break;
+                                case 2: sql_add_img_2 = item.OuterHtml; break;
+                                case 3: sql_add_img_3 = item.OuterHtml; break;
+                                case 4: sql_add_img_4 = item.OuterHtml; break;
+                            }
+                        }
+                    }
+                    update_rows.Add(string.Format("('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}','{12}','{13}','{14}','{15}','{16}')",
+                        MySqlHelper.EscapeString(sql_id), 
+                        MySqlHelper.EscapeString(sql_prd_price),
+                        MySqlHelper.EscapeString(sql_prd_promo),
+                        MySqlHelper.EscapeString(sql_prd_stock),
+                        MySqlHelper.EscapeString(sql_detail_img),
+                        MySqlHelper.EscapeString(sql_opt_1),
+                        MySqlHelper.EscapeString(sql_opt_val_1),
+                        MySqlHelper.EscapeString(sql_opt_2),
+                        MySqlHelper.EscapeString(sql_opt_val_2),
+                        MySqlHelper.EscapeString(sql_opt_3),
+                        MySqlHelper.EscapeString(sql_opt_val_3),
+                        MySqlHelper.EscapeString(sql_prd_attr),
+                        MySqlHelper.EscapeString(sql_add_img_1),
+                        MySqlHelper.EscapeString(sql_add_img_2),
+                        MySqlHelper.EscapeString(sql_add_img_3),
+                        MySqlHelper.EscapeString(sql_add_img_4),
+                        MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))
+                        )
+                    );
+                }
+                conn.Open();
+                if(update_rows.Count > 0)
+                {
+                    // 업데이트 하기 위한 임시 테이블 생성
+                    string tmpCreate = "CREATE TABLE tmp(" +
+                            "id VARCHAR(20), " +
+                            "prd_price VARCHAR(50), " +
+                            "prd_promo VARCHAR(50), " +
+                            "prd_stock VARCHAR(45), " +
+                            "detail_img VARCHAR(8000), " +
+                            "opt_1 VARCHAR(45), " +
+                            "opt_val_1 VARCHAR(500), " +
+                            "opt_2 VARCHAR(45), " +
+                            "opt_val_2 VARCHAR(500), " +
+                            "opt_3 VARCHAR(45), " +
+                            "opt_val_3 VARCHAR(500), " +
+                            "prd_attr VARCHAR(1000), " +
+                            "add_img_1 VARCHAR(200), " +
+                            "add_img_2 VARCHAR(200), " +
+                            "add_img_3 VARCHAR(200), " +
+                            "add_img_4 VARCHAR(200), " +
+                            "updated_date VARCHAR(45) " +
+                        ") " +
+                        "DEFAULT CHARACTER SET = utf8 " +
+                        "COLLATE = utf8_bin;";
+                    MySqlCommand myCmdTemp = new MySqlCommand(tmpCreate, conn);
+                    myCmdTemp.CommandTimeout = 1000;
+                    myCmdTemp.ExecuteNonQuery();
 
-                    cmd.ExecuteNonQuery();
+                    sUPDATE.Append(string.Join(",", update_rows));
+                    sUPDATE.Append(";");
+                    using (MySqlCommand myCmd = new MySqlCommand(sUPDATE.ToString(), conn))
+                    {
+                        myCmd.CommandType = CommandType.Text;
+                        myCmd.CommandTimeout = 1000;
+                        myCmd.ExecuteNonQuery();
+
+                        myCmd.CommandText = string.Format(
+                            "UPDATE tmp T INNER JOIN taobao_goods TB ON T.id = TB.id " +
+                            "SET TB.prd_price = T.prd_price, TB.prd_promo = T.prd_promo, TB.prd_stock = T.prd_stock, TB.detail_yn = '1', TB.detail_img = T.detail_img, " +
+                            "TB.opt_1 = T.opt_1, TB.opt_val_1 = T.opt_val_1, TB.opt_2 = T.opt_2, TB.opt_val_2 = T.opt_val_2, TB.opt_3 = T.opt_3, TB.opt_val_3 = T.opt_val_3, TB.prd_attr = T.prd_attr, " +
+                           "TB.add_img_1 = T.add_img_1, TB.add_img_2 = T.add_img_2, TB.add_img_3 = T.add_img_3, TB.add_img_4 = T.add_img_4, " +
+                            "TB.updated_date = T.updated_date ; " +
+                            "DROP TABLE tmp;",
+                            DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                        );
+                        myCmd.ExecuteNonQuery();
+                    }
                 }
                 MessageBox.Show("상품수집 완료");
                 if (conn != null) conn.Close();
@@ -292,10 +403,12 @@ namespace webCrawler
             }
             finally
             {
+                doc_opacity.Visibility = Visibility.Collapsed;
+                doc_status.Visibility = Visibility.Collapsed;
                 if (conn != null) conn.Close();
             }
         }
-
+        // 상품정보를 taobao_goods 테이블에서 가져온다. 
         private void getDbData()
         {
             MySqlConnection conn = null;
@@ -307,15 +420,15 @@ namespace webCrawler
                 cmd.Connection = conn;
                 conn.Open();
                 cmd.Prepare();
-                cmd.CommandText = "SELECT * FROM taobao_goods";
+                cmd.CommandText = "SELECT * FROM taobao_goods; ";
                 MySqlDataReader reader = cmd.ExecuteReader();
                 string id;
                 while (reader.Read())
                 {
                     id = reader["id"] as string;
 
-                    if (id_list.IndexOf(id) == -1)
-                    {
+                     if (id_list.IndexOf(id) == -1)
+                     {
                         p_id_list.Add(id);
                         db_list.Add(new Prd_Store(
                             reader["id"] as string,
@@ -328,9 +441,10 @@ namespace webCrawler
                             reader["detail_img"] as string,
                             reader["created_date"] as string,
                             reader["updated_date"] as string,
-                            reader["user_id"] as string
+                            reader["user_id"] as string,
+                            reader["prd_status"] as string
                             ));
-                    }
+                     }
                 }
             }
             finally
@@ -347,18 +461,10 @@ namespace webCrawler
             if (strHtml == "") return;
             getData(strHtml);
         }
-        // 상품리스트 파싱하기 & prd_list 에 저장하기
-        ArrayList prd_list = new ArrayList();           // Product 클래스를 담아두는 ArrayList
-        List<string> id_list = new List<string>();      // 상품 중복 파싱을 방지하기 위한 상품코드 저장하는 List
-        List<ViewModel.ProductViewModel> prdView_list = new List<ViewModel.ProductViewModel>();
-        int idx = 1;
         //  DB 저장 버튼 클릭 이벤트
         private void btnStoreDB_Click(object sender, RoutedEventArgs e)
         {
-            MySqlConnection conn = null;
-            List<string> item = new List<string>();
-            //try
-            //{
+            if (prdView_list == null) return;
             StringBuilder sINSERT = new StringBuilder("INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES ");
             StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_img, prd_name, prd_category, created_date) VALUES ");
             List<string> insert_rows = new List<string>();
@@ -369,7 +475,7 @@ namespace webCrawler
                 {
                     foreach (ViewModel.ProductViewModel row in prdView_list)
                     {
-                        if (row.Prd_exist != "O")
+                        if (row.Prd_exist != "O" & row.Prd_status != "9")
                         {
                             insert_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}')",
                                 MySqlHelper.EscapeString(row.Id),                              // 상품코드
@@ -452,84 +558,74 @@ namespace webCrawler
                     if (mConn != null) mConn.Close();
                 }
             }
-
-
-
-                //conn = new MySqlConnection(strConn);
-                //MySqlCommand cmd = new MySqlCommand();
-
-
-
-                //cmd.Connection = conn;
-                //conn.Open();
-                //cmd.Prepare();
-                //cmd.Parameters.Add("@id", MySqlDbType.String);
-                //cmd.Parameters.Add("@prd_img", MySqlDbType.String);
-                //cmd.Parameters.Add("@prd_name", MySqlDbType.String);
-                //cmd.Parameters.Add("@prd_category", MySqlDbType.String);
-                //cmd.Parameters.Add("@created_date", MySqlDbType.String);
-                //cmd.Parameters.Add("@updated_date", MySqlDbType.String);
-
-                ////IEnumerable list = dgTable.ItemsSource as IEnumerable;
-                //foreach (ViewModel.ProductViewModel row in prdView_list)
-                //{
-                //    cmd.CommandText = "SELECT id FROM taobao_goods WHERE id = @id";
-                //    cmd.Parameters["@id"].Value = row.Id;
-                //    MySqlDataReader reader = cmd.ExecuteReader();
-                //    bool isEmpty = reader.Read();
-                //    reader.Close();
-                //    if (!isEmpty)
-                //    {
-                //        insert_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}')", MySqlHelper.EscapeString(row.Id), MySqlHelper.EscapeString(row.Prd_img.ToString()), MySqlHelper.EscapeString(row.Prd_name),
-                //            MySqlHelper.EscapeString(row.Prd_category), MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))));
-                //        cmd.CommandText = "INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES(@id, @prd_img, @prd_name, @prd_category, @created_date);";
-                //        cmd.Parameters["@id"].Value = row.Id;
-                //        cmd.Parameters["@prd_img"].Value = row.Prd_img;
-                //        cmd.Parameters["@prd_name"].Value = row.Prd_name;
-                //        cmd.Parameters["@prd_category"].Value = row.Prd_category;
-                //        cmd.Parameters["@created_date"].Value = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                //        //cmd.ExecuteNonQuery();
-                //        row.Prd_type = "[Insert]";
-                //    }
-                //    else
-                //    {
-                //        cmd.CommandText = "UPDATE taobao_goods SET prd_img = @prd_img, prd_name = @prd_name, prd_category = @prd_category, updated_date = @updated_date WHERE id = @id";
-                //        cmd.Parameters["@id"].Value = row.Id;
-                //        cmd.Parameters["@prd_img"].Value = row.Prd_img;
-                //        cmd.Parameters["@prd_name"].Value = row.Prd_name;
-                //        cmd.Parameters["@prd_category"].Value = row.Prd_category;
-                //        cmd.Parameters["@updated_date"].Value = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ");
-                //        //cmd.ExecuteNonQuery();
-                //        row.Prd_type = "[Updated]";
-                //    }
-                //    row.Prd_exist = "O";
-
-                //    item.Add(row.Id);
-                //    //getDetail(id);
-                //}
-
-                //MessageBox.Show("DB 저장 완료");
-            //}
-            //finally
-            //{
-            //    if (conn != null) conn.Close();
-            //}
         }
         // 상품정보 가져오기
         private async void btnGetProductInfo_Click(object sender, RoutedEventArgs e)
         {
+            await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
+            string url = "";
+            int count = 0, chk_count = 0 ;
             html_node = new List<string>();
-            foreach (ViewModel.ProductViewModel prd in prdView_list)
+            error_logs = new List<string>();
+            var browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
-                //if (idx++ == 5) break;
-                if (prd.IsSelected)
+                Headless = true
+            });
+            try
+            {
+                doc_opacity.Visibility = Visibility.Visible;
+                doc_status.Visibility = Visibility.Visible;
+                foreach (ViewModel.ProductViewModel prd in prdView_list)
                 {
-                    browser.Address = "https://detail.tmall.com/item.htm?id=" + prd.Id;
-                    await Task.Delay(int.Parse(txtTimeOut.Text) * 1000);
+                    if (prd.IsSelected) chk_count++;
                 }
+
+                    foreach (ViewModel.ProductViewModel prd in prdView_list)
+                    {
+                    try
+                    {
+                        if (prd.IsSelected)
+                        {
+
+                            using (var page = await browser.NewPageAsync())
+                            {
+                                count++;
+                                url = "https://detail.tmall.com/item.htm?id=" + prd.Id;
+                                txt_crawling_count.Text = count.ToString() + "/" + chk_count.ToString() + "상품 수집 중";
+                                txt_crawling_status.Text = url;
+
+                                var response = await page.GoToAsync(url, new NavigationOptions
+                                {
+                                    WaitUntil = new WaitUntilNavigation[]
+                                    {
+                                            WaitUntilNavigation.Networkidle0
+                                    }
+                                });
+                                html_node.Add(await page.GetContentAsync());
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        error_logs.Add(prd.Id);
+                        continue;
+                        //throw ex;
+                    }
+                }
+                
+                //await browser.CloseAsync();
             }
-            // 상품 디테일 파싱하기
-            parsingPrdDetail(html_node);
+            catch(Exception exc)
+            {
+                throw exc;
+            }
+            finally
+            {
+                await browser.CloseAsync();
+                // 상품 디테일 파싱하기
+                parsingPrdDetail(html_node);
+            }
+
         }
         private void BtnMyDB_Click(object sender, RoutedEventArgs e)
         {
@@ -557,13 +653,23 @@ namespace webCrawler
         {
             main_doc.Visibility = Visibility.Visible;
             myDb_doc.Visibility = Visibility.Collapsed;
+            doc_CtrlDelPrd.Visibility = Visibility.Collapsed;
         }
 
         private void BtnNext_Click(object sender, RoutedEventArgs e)
         {
             main_doc.Visibility = Visibility.Collapsed;
             myDb_doc.Visibility = Visibility.Visible;
+            doc_CtrlDelPrd.Visibility = Visibility.Collapsed;
             getMyDB();
+        }
+        // 제외 상품 관리 버튼 클릭
+        private void BtnCtrlDelPrd_Click(object sender, RoutedEventArgs e)
+        {
+            main_doc.Visibility = Visibility.Collapsed;
+            myDb_doc.Visibility = Visibility.Collapsed;
+            doc_CtrlDelPrd.Visibility = Visibility.Visible;
+            showDelPrdList();
         }
         // Main 화면 이동 버튼 클릭 이벤트
         private void btn_main_Click(object sender, RoutedEventArgs e)
@@ -607,7 +713,7 @@ namespace webCrawler
                 cmd.Connection = conn;
                 conn.Open();
                 cmd.Prepare();
-                cmd.CommandText = "SELECT * FROM taobao_goods";
+                cmd.CommandText = "SELECT * FROM taobao_goods WHERE prd_status = '1'; ";
                 MySqlDataReader reader = cmd.ExecuteReader();
                 BitmapImage bi = new BitmapImage();
                 int num = 1;
@@ -618,11 +724,13 @@ namespace webCrawler
                     bi.UriSource = new Uri(reader["prd_img"] as string, UriKind.RelativeOrAbsolute);
                     bi.EndInit();
                     myDBView_list.Add(new ViewModel.MyDBViewModel(
-                        false, num++, reader["id"].ToString(), bi, reader["prd_category"].ToString(), reader["prd_name"].ToString(),
-                        reader["prd_attr"].ToString().Replace("&$%", "\r\n").Replace("&nbsp;", " "), reader["detail_yn"].ToString(), 
-                        reader["prd_price"].ToString(), reader["prd_opt"].ToString().Replace("&$%", "\r\n").Replace("&nbsp;", " "), 
-                        reader["prd_stock"].ToString(), reader["detail_img"].ToString().Replace("&$%", "\r\n").Replace("&nbsp;", " "), 
-                        reader["created_date"].ToString(), reader["updated_date"].ToString()
+                        false, num++, reader["id"].ToString(), bi, reader["prd_category"].ToString(), 
+                        reader["prd_name"].ToString(), reader["prd_attr"].ToString(),reader["detail_yn"].ToString(), 
+                        reader["prd_price"].ToString(), reader["prd_promo"].ToString(),
+                        reader["opt_1"].ToString(), reader["opt_val_1"].ToString(), reader["opt_2"].ToString(), reader["opt_val_2"].ToString(), reader["opt_3"].ToString(), reader["opt_val_3"].ToString(),
+                        reader["prd_stock"].ToString(), reader["detail_img"].ToString(), 
+                        reader["add_img_1"].ToString(), reader["add_img_2"].ToString(), reader["add_img_3"].ToString(), reader["add_img_4"].ToString(),
+                        reader["created_date"].ToString(), reader["updated_date"].ToString(), reader["user_id"].ToString()
                         )
                     );
                 }
@@ -648,6 +756,186 @@ namespace webCrawler
                 row.IsSelected = false;
             }
         }
+        // 상품 수집 제외
+        private void BtnDelProduct_Click(object sender, RoutedEventArgs e)
+        {
+            StringBuilder sINSERT = new StringBuilder("INSERT INTO _tmp (id) VALUES  ");
+            List<string> insert_rows = new List<string>();
+            MySqlConnection conn = null;
+            foreach(ViewModel.MyDBViewModel item in myDBView_list)
+            {
+                if (item.IsSelected) insert_rows.Add(string.Format("( '{0}' )", MySqlHelper.EscapeString(item.Id)));
+            }
+            if(insert_rows.Count == 0) MessageBox.Show("수집 제외할 상품을 선택해주세요.");
+            else
+            {
+                try
+                {
+                    conn = new MySqlConnection(strConn);
+                    conn.Open();
+
+                    string tmpCreate = "CREATE TABLE _tmp(id VARCHAR(20) ) DEFAULT CHARACTER SET = utf8 COLLATE = utf8_bin; ";
+                    MySqlCommand myCmdTemp = new MySqlCommand(tmpCreate, conn);
+                    myCmdTemp.CommandType = CommandType.Text;
+                    myCmdTemp.CommandTimeout = 1000;
+                    myCmdTemp.ExecuteNonQuery();
+
+                    sINSERT.Append(string.Join(",", insert_rows));
+                    sINSERT.Append(";");
+                    using (MySqlCommand myCmd = new MySqlCommand(sINSERT.ToString(), conn))
+                    {
+                        myCmd.CommandType = CommandType.Text;
+                        myCmd.CommandTimeout = 1000;
+                        myCmd.ExecuteNonQuery();
+
+                        myCmd.CommandText = string.Format(
+                            "UPDATE taobao_goods T INNER JOIN _tmp A ON T.id = A.id " +
+                            "SET T.prd_status = '9'; " +
+                            "DROP TABLE _tmp; "
+                        ) ;
+                        myCmd.ExecuteNonQuery();
+
+                        MessageBox.Show(string.Format("총 {0}개의 상품이 수집제외 됐습니다.", insert_rows.Count));
+                        getMyDB();
+                    }
+                }catch(Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                    throw ex;
+                }
+                finally
+                {
+                    if (conn != null) conn.Close();
+                    clearDbTable();
+                    getDbData();
+                }
+            }
+        }
+        // 목록비우기 클릭
+        private void BtnClearPrdList_Click(object sender, RoutedEventArgs e)
+        {
+            clearDbTable();
+            getDbData();
+        }
+        // 목록비우기
+        private void clearDbTable()
+        {
+            idx = 1;
+            prdView_list = new List<ViewModel.ProductViewModel>(); ;
+            dgTable.ItemsSource = null;
+            id_list = new List<string>();
+        }
+        // 제외상품 리스트 생성
+        private void showDelPrdList()
+        {
+            delPrdView_list = new List<ViewModel.delProductViewModel>();
+            MySqlConnection conn = null;
+            try
+            {
+                conn = new MySqlConnection(strConn);
+                MySqlCommand cmd = new MySqlCommand();
+                cmd.Connection = conn;
+                conn.Open();
+                cmd.Prepare();
+                cmd.CommandText = "SELECT * FROM taobao_goods WHERE prd_status = '9'; ";
+                MySqlDataReader reader = cmd.ExecuteReader();
+                BitmapImage bi = new BitmapImage();
+                int num = 1;
+                while (reader.Read())
+                {
+                    bi = new BitmapImage();
+                    bi.BeginInit();
+                    bi.UriSource = new Uri(reader["prd_img"] as string, UriKind.RelativeOrAbsolute);
+                    bi.EndInit();
+                    delPrdView_list.Add(new ViewModel.delProductViewModel(
+                        false, num++, reader["id"].ToString(), bi, reader["prd_name"].ToString()
+                        )
+                    );
+                }
+                dgCtrlDelPrd.ItemsSource = delPrdView_list;
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+                throw ex;
+            }
+            finally
+            {
+                if (conn != null) conn.Close();
+            }
+        }
+
+        private void ChkCtrlDel_Checked(object sender, RoutedEventArgs e)
+        {
+            foreach(ViewModel.delProductViewModel row in delPrdView_list)
+            {
+                row.IsSelected = true;
+            }
+        }
+
+        private void ChkCtrlDel_Unchecked(object sender, RoutedEventArgs e)
+        {
+            foreach (ViewModel.delProductViewModel row in delPrdView_list)
+            {
+                row.IsSelected = false;
+            }
+        }
+        // 상품제외 해제하기
+        private void BtnReleaseProduct_Click(object sender, RoutedEventArgs e)
+        {
+            StringBuilder sINSERT = new StringBuilder("INSERT INTO _tmp (id) VALUES  ");
+            List<string> insert_rows = new List<string>();
+            MySqlConnection conn = null;
+            foreach (ViewModel.delProductViewModel item in delPrdView_list)
+            {
+                if (item.IsSelected) insert_rows.Add(string.Format("( '{0}' )", MySqlHelper.EscapeString(item.Id)));
+            }
+            if (insert_rows.Count == 0) MessageBox.Show("수집 제외할 상품을 선택해주세요.");
+            else
+            {
+                try
+                {
+                    conn = new MySqlConnection(strConn);
+                    conn.Open();
+
+                    string tmpCreate = "CREATE TABLE _tmp(id VARCHAR(20) ) DEFAULT CHARACTER SET = utf8 COLLATE = utf8_bin; ";
+                    MySqlCommand myCmdTemp = new MySqlCommand(tmpCreate, conn);
+                    myCmdTemp.CommandType = CommandType.Text;
+                    myCmdTemp.CommandTimeout = 1000;
+                    myCmdTemp.ExecuteNonQuery();
+
+                    sINSERT.Append(string.Join(",", insert_rows));
+                    sINSERT.Append(";");
+                    using (MySqlCommand myCmd = new MySqlCommand(sINSERT.ToString(), conn))
+                    {
+                        myCmd.CommandType = CommandType.Text;
+                        myCmd.CommandTimeout = 1000;
+                        myCmd.ExecuteNonQuery();
+
+                        myCmd.CommandText = string.Format(
+                            "UPDATE taobao_goods T INNER JOIN _tmp A ON T.id = A.id " +
+                            "SET T.prd_status = '1'; " +
+                            "DROP TABLE _tmp; "
+                        );
+                        myCmd.ExecuteNonQuery();
+
+                        MessageBox.Show(string.Format("총 {0}개의 상품이 수집제외에서 해제 됐습니다.", insert_rows.Count));
+                        getMyDB();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.ToString());
+                    throw ex;
+                }
+                finally
+                {
+                    if (conn != null) conn.Close();
+                    clearDbTable();
+                    showDelPrdList();
+                }
+            }
+        }
 
         private void BtnDownloadExcel_Click(object sender, RoutedEventArgs e)
         {
@@ -661,38 +949,61 @@ namespace webCrawler
             try
             {
                 int r = dgMyDB.Items.Count;
-                int c = dgMyDB.Columns.Count;
+                //int c = dgMyDB.Columns.Count;
+                int c = 21;
                 var data = new object[r, c];
 
                 // 헤더 설정
                 data[0, 0] = "순서";
                 data[0, 1] = "상품코드";
-                data[0, 2] = "대표이미지";
-                data[0, 3] = "상품명";
-                data[0, 4] = "상품속성";
-                data[0, 5] = "상품가격";
-                data[0, 6] = "상품옵션";
-                data[0, 7] = "상품재고";
-                data[0, 8] = "상세이미지";
-                data[0, 9] = "생성일";
-                data[0, 10] = "수정일";
+                data[0, 2] = "상품명";
+                data[0, 3] = "공급가격";
+                data[0, 4] = "판매가격";
+                data[0, 5] = "시중가격";
+                data[0, 6] = "옵션명1";
+                data[0, 7] = "옵션항목1";
+                data[0, 8] = "옵션명2";
+                data[0, 9] = "옵션항목2";
+                data[0, 10] = "옵션명3";
+                data[0, 11] = "옵션항목3";
+                data[0, 12] = "상품이미지";
+                data[0, 13] = "상품상세설명";
+                data[0, 14] = "신상세설명";
+                data[0, 15] = "상품재고";
+                data[0, 16] = "추가이미지1";
+                data[0, 17] = "추가이미지2";
+                data[0, 18] = "추가이미지3";
+                data[0, 19] = "추가이미지4";
+                data[0, 20] = "상품 URL";
 
 
                 int i = 0;
+                
                 foreach (ViewModel.MyDBViewModel row in myDBView_list)
                 {
                     ++i;
                     data[i, 0] = row.Num;
                     data[i, 1] = row.Id;
-                    data[i, 2] = row.Prd_img.UriSource.ToString();
-                    data[i, 3] = row.Prd_name;
-                    data[i, 4] = row.Prd_attr;
-                    data[i, 5] = row.Prd_price;
-                    data[i, 6] = row.Prd_opt;
-                    data[i, 7] = row.Prd_stock;
-                    data[i, 8] = row.Detail_img;
-                    data[i, 9] = row.Created_date;
-                    data[i, 10] = row.Updated_date;
+                    data[i, 2] = row.Prd_name;
+                    data[i, 3] = row.Prd_price;
+                    //data[i, 4] = (float.Parse(row.Prd_price) * float.Parse(txtExChange.Text)).ToString();
+                    data[i, 4] = row.Prd_price;
+                    data[i, 5] = row.Prd_promo;
+                    data[i, 6] = row.Opt_1;
+                    data[i, 7] = row.Opt_val_1;
+                    data[i, 8] = row.Opt_2;
+                    data[i, 9] = row.Opt_val_2;
+                    data[i, 10] = row.Opt_3;
+                    data[i, 11] = row.Opt_val_3;
+                    data[i, 12] = row.Prd_img.ToString();
+                    data[i, 13] = row.Detail_img;
+                    data[i, 14] = row.Detail_img;
+                    data[i, 15] = row.Prd_stock;
+                    data[i, 16] = row.Add_img_1;
+                    data[i, 17] = row.Add_img_2;
+                    data[i, 18] = row.Add_img_3;
+                    data[i, 19] = row.Add_img_4;
+                    data[i, 20] = "https://detail.tmall.com/item.htm?id=" + row.Id;
                 }
                 excelSheet.Range[excelSheet.Cells[1, 1], excelSheet.Cells[r, c]].Value2 = data;
                 excel.Visible = true;
