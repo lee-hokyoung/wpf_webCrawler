@@ -9,6 +9,7 @@ using System.Data;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -356,8 +357,20 @@ namespace webCrawler
         {
             MySqlConnection conn = null;
             List<string> item = new List<string>();
+            StringBuilder sInsert = new StringBuilder("INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES ");
             try
             {
+                using(MySqlConnection con = new MySqlConnection(strConn))
+                {
+                    List<string> insert_rows = new List<string>();
+                    foreach(ViewModel.ProductViewModel row in prdView_list)
+                    {
+                        if(row.Prd_exist == "1")
+                        {
+
+                        }
+                    }
+                }
                 conn = new MySqlConnection(strConn);
                 MySqlCommand cmd = new MySqlCommand();
                 cmd.Connection = conn;
