@@ -30,7 +30,8 @@ namespace webCrawler
         public string strConn = Properties.Settings.Default.strConn;
         public string strHtml = "", detailHtml = "";
         public List<string> html_node = null;
-        public List<string> error_logs = null;
+        public List<string> success_ids = null;
+        public List<Tuple<string, string>> error_ids = null;
         public string main_url = "https://world.taobao.com/";
         public string login_url = "https://world.taobao.com/markets/all/login";
 
@@ -38,6 +39,7 @@ namespace webCrawler
         ArrayList prd_list = new ArrayList();           // Product 클래스를 담아두는 ArrayList
         List<string> id_list = new List<string>();      // 상품 중복 파싱을 방지하기 위한 상품코드 저장하는 List
         List<ViewModel.ProductViewModel> prdView_list = new List<ViewModel.ProductViewModel>();
+        List<ViewModel.ResultViewModel> result_view_list = new List<ViewModel.ResultViewModel>();
         int idx = 1;
 
         // 제외상품 리스트 관련 변수
@@ -224,6 +226,7 @@ namespace webCrawler
 
                 foreach (var node in html_node)
                 {
+                    if (node == null) continue;
                     // 상품 속성 : prd_attr
                     doc = new HtmlDocument();
                     doc.LoadHtml(node);
@@ -393,7 +396,6 @@ namespace webCrawler
                         myCmd.ExecuteNonQuery();
                     }
                 }
-                MessageBox.Show("상품수집 완료");
                 if (conn != null) conn.Close();
             }
             catch (Exception e)
@@ -403,6 +405,8 @@ namespace webCrawler
             }
             finally
             {
+                fnGenResult();
+                MessageBox.Show("상품수집 완료" + Environment.NewLine + "수집성공 : " + success_ids.Count + "개" + Environment.NewLine + "수집실패 : " + error_ids.Count + "개");
                 doc_opacity.Visibility = Visibility.Collapsed;
                 doc_status.Visibility = Visibility.Collapsed;
                 if (conn != null) conn.Close();
@@ -562,26 +566,28 @@ namespace webCrawler
         // 상품정보 가져오기
         private async void btnGetProductInfo_Click(object sender, RoutedEventArgs e)
         {
+            doc_opacity.Visibility = Visibility.Visible;
+            doc_status.Visibility = Visibility.Visible;
+            txt_crawling_status.Text = "상품 수집에 필요한 리소스를 받아오는 중입니다.";
             await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
             string url = "";
             int count = 0, chk_count = 0 ;
             html_node = new List<string>();
-            error_logs = new List<string>();
+            success_ids = new List<string>();
+            error_ids = new List<Tuple<string, string>>();
             var browser = await Puppeteer.LaunchAsync(new LaunchOptions
             {
                 Headless = true
             });
             try
             {
-                doc_opacity.Visibility = Visibility.Visible;
-                doc_status.Visibility = Visibility.Visible;
                 foreach (ViewModel.ProductViewModel prd in prdView_list)
                 {
                     if (prd.IsSelected) chk_count++;
                 }
 
-                    foreach (ViewModel.ProductViewModel prd in prdView_list)
-                    {
+                foreach (ViewModel.ProductViewModel prd in prdView_list)
+                {
                     try
                     {
                         if (prd.IsSelected)
@@ -593,21 +599,21 @@ namespace webCrawler
                                 url = "https://detail.tmall.com/item.htm?id=" + prd.Id;
                                 txt_crawling_count.Text = count.ToString() + "/" + chk_count.ToString() + "상품 수집 중";
                                 txt_crawling_status.Text = url;
-
                                 var response = await page.GoToAsync(url, new NavigationOptions
                                 {
                                     WaitUntil = new WaitUntilNavigation[]
                                     {
-                                            WaitUntilNavigation.Networkidle0
+                                        WaitUntilNavigation.Networkidle0
                                     }
                                 });
                                 html_node.Add(await page.GetContentAsync());
+                                success_ids.Add(prd.Id);
                             }
                         }
                     }
                     catch (Exception ex)
                     {
-                        error_logs.Add(prd.Id);
+                        error_ids.Add(Tuple.Create(prd.Id, ex.ToString()));
                         continue;
                         //throw ex;
                     }
@@ -625,7 +631,6 @@ namespace webCrawler
                 // 상품 디테일 파싱하기
                 parsingPrdDetail(html_node);
             }
-
         }
         private void BtnMyDB_Click(object sender, RoutedEventArgs e)
         {
@@ -936,7 +941,7 @@ namespace webCrawler
                 }
             }
         }
-
+        // 엑셀다운로드
         private void BtnDownloadExcel_Click(object sender, RoutedEventArgs e)
         {
             var excel = new NsExcel.Application();
@@ -1020,6 +1025,19 @@ namespace webCrawler
             }
         }
         #endregion
-
+        // 수집결과 출력
+        private void fnGenResult()
+        {
+            dg_result.ItemsSource = null;
+            foreach(var item in error_ids)
+            {
+                result_view_list.Add(new ViewModel.ResultViewModel(
+                    item.Item1,     // 상품코드
+                    item.Item2      // 수집결과
+                    )
+                );
+            }
+            dg_result.ItemsSource = result_view_list;
+        }
     }
 }

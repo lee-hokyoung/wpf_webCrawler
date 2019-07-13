@@ -91,27 +91,19 @@
                 <Grid Grid.Row="1" Grid.Column="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30"></RowDefinition>
-                        <RowDefinition Height="30"></RowDefinition>
-                        <RowDefinition Height="30"></RowDefinition>
-                        <RowDefinition Height="30"></RowDefinition>
                         <RowDefinition Height="auto"></RowDefinition>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="2*"></ColumnDefinition>
-                        <ColumnDefinition Width="3*"></ColumnDefinition>
-                        <ColumnDefinition Width="2*"></ColumnDefinition>
                         <ColumnDefinition Width="1*"></ColumnDefinition>
                     </Grid.ColumnDefinitions>
                     <!--상품 수집 시간-->
-                    <Button Name="btnClearPrdList" Click="BtnClearPrdList_Click">목록 비우기</Button>
-                    <!--<Label Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" HorizontalContentAlignment="Right">상품수집 시간</Label>
-                    <TextBox Name="txtTimeOut" Grid.Row="0" Grid.Column="2" VerticalContentAlignment="Center" >10</TextBox>
-                    <Label Grid.Row="0" Grid.Column="3" VerticalContentAlignment="Center">초</Label>-->
-                    <!--중국 위완화 -> 한국 원화 환율-->
-                    <!--<Label Grid.Row="1" Grid.Column="0" VerticalContentAlignment="Center" HorizontalContentAlignment="Right">1 중국 위완화</Label>
-                    <TextBox Name="txtExChange" Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center">170.62</TextBox>
-                    <Label Grid.Row="1" Grid.Column="2" VerticalContentAlignment="Center">원</Label>-->
-                    
+                    <Button Name="btnClearPrdList" Click="BtnClearPrdList_Click" Grid.Row="0">목록 비우기</Button>
+                    <DataGrid Grid.Row="1" Name="dg_result" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsSource="{Binding Mode=OneWay, Path=result_view_list}">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Prd_code}" IsReadOnly="True" Width="80"/>
+                            <DataGridTextColumn Header="수집결과" Binding="{Binding Path=Exception}" IsReadOnly="True" Width="1*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
             </Grid>
         </DockPanel>
@@ -225,7 +217,7 @@
                     </StackPanel>
                 </Border>
                 <Border Grid.Row="1" BorderThickness="1,0,1,0" BorderBrush="Black" Background="White">
-                    <TextBlock Name="txt_crawling_count" VerticalAlignment="Center" HorizontalAlignment="Center">1/10 수집 중</TextBlock>
+                    <TextBlock Name="txt_crawling_count" VerticalAlignment="Center" HorizontalAlignment="Center"></TextBlock>
                 </Border>
                 <Border Grid.Row="2" BorderThickness="1,0,1,1" BorderBrush="Black" Background="White">
                     <TextBlock Name="txt_crawling_status" VerticalAlignment="Top" HorizontalAlignment="Center">상품수집중</TextBlock>
