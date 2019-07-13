@@ -87,9 +87,10 @@ namespace webCrawler
         private string _created_date;
         private string _updated_date;
         private string _user_id;
+        private string _prd_status;
 
         public Prd_Store() { }
-        public Prd_Store(string id, string prd_img, string prd_attr, string prd_name, string detail_yn, string prd_price, string prd_opt, string detail_img, string created_date, string updated_date, string user_id)
+        public Prd_Store(string id, string prd_img, string prd_attr, string prd_name, string detail_yn, string prd_price, string prd_opt, string detail_img, string created_date, string updated_date, string user_id, string prd_status)
         {
             _id = id;
             _prd_img = prd_img;
@@ -102,6 +103,7 @@ namespace webCrawler
             _created_date = created_date;
             _updated_date = updated_date;
             _user_id = user_id;
+            _prd_status = prd_status;
         }
         public string Id
         {
@@ -157,6 +159,11 @@ namespace webCrawler
         {
             get { return _user_id; }
             set { _user_id = value; }
+        }
+        public string Prd_status
+        {
+            get { return _prd_status; }
+            set { _prd_status = value; }
         }
     }
 }

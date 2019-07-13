@@ -16,8 +16,9 @@ namespace webCrawler.ViewModel
         private string _prd_type;           // 등록 타입 : New or Updated
         private string _prd_name;           // 상품명
         private string _prd_category;       // 카테고리
+        private string _prd_status;         // 상품 상태 (1:판매중, 8:재고 없음, 9:수집제외)
         public ProductViewModel() { }
-        public ProductViewModel(bool isSelected, string id, BitmapImage prd_img, int row_idx, string detail_yn, string prd_exist, string prd_type, string prd_name, string prd_category)
+        public ProductViewModel(bool isSelected, string id, BitmapImage prd_img, int row_idx, string detail_yn, string prd_exist, string prd_type, string prd_name, string prd_category, string prd_status)
         {
             _isSelected = isSelected;
             _id = id;
@@ -28,6 +29,7 @@ namespace webCrawler.ViewModel
             _prd_type = prd_type;
             _prd_name = prd_name;
             _prd_category = prd_category;
+            _prd_status = prd_status;
         }
         public bool IsSelected
         {
@@ -95,6 +97,11 @@ namespace webCrawler.ViewModel
         {
             get { return _prd_category; }
             set { _prd_category = value; }
+        }
+        public string Prd_status
+        {
+            get { return _prd_status; }
+            set { _prd_status = value; }
         }
         private ObservableCollection<ProductViewModel> productViewCollection = new ObservableCollection<ProductViewModel>();
         public ObservableCollection<ProductViewModel> ProductViewCollection
