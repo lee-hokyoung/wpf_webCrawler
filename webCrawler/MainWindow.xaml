@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:webCrawler"
         mc:Ignorable="d"
-        Title="타오바오 상품 수집 프로그램" Height="800" Width="1200">
+        Title="타오바오 상품 수집 프로그램" Height="800" Width="1200" Closed="Window_Closed" >
     <Grid Name="main_grid">
         <Grid.RowDefinitions>
             <RowDefinition Height="30"></RowDefinition>
@@ -91,7 +91,7 @@
                 <Grid Grid.Row="1" Grid.Column="1">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="30"></RowDefinition>
-                        <RowDefinition Height="auto"></RowDefinition>
+                        <RowDefinition Height="1*"></RowDefinition>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"></ColumnDefinition>
@@ -100,8 +100,8 @@
                     <Button Name="btnClearPrdList" Click="BtnClearPrdList_Click" Grid.Row="0">목록 비우기</Button>
                     <DataGrid Grid.Row="1" Name="dg_result" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsSource="{Binding Mode=OneWay, Path=result_view_list}">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Prd_code}" IsReadOnly="True" Width="80"/>
-                            <DataGridTextColumn Header="수집결과" Binding="{Binding Path=Exception}" IsReadOnly="True" Width="1*"/>
+                            <DataGridTextColumn Header="상품코드" Binding="{Binding Path=Prd_code}" IsReadOnly="False" Width="80"/>
+                            <DataGridTextColumn Header="수집결과" Binding="{Binding Path=Exception}" IsReadOnly="False" Width="1*"/>
                         </DataGrid.Columns>
                     </DataGrid>
                 </Grid>
@@ -147,10 +147,10 @@
                         <DataGridTextColumn Header="옵션항목2" Binding="{Binding Path=Opt_val_2}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="옵션명3" Binding="{Binding Path=Opt_3}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="옵션항목3" Binding="{Binding Path=Opt_val_3}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="상품상세설명" Binding="{Binding Path=Detail_img}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="상품상세설명" Binding="{Binding Path=Detail_img}" IsReadOnly="True" Visibility="Collapsed"/>
                         <DataGridTextColumn Header="신상세설명" Binding="{Binding Path=Detail_img}" IsReadOnly="True"  Visibility="Collapsed"/>
-                        <DataGridTextColumn Header="카테고리" Binding="{Binding Path=Prd_category}" IsReadOnly="True"/>
-                        <DataGridTextColumn Header="상품속성" Binding="{Binding Path=Prd_attr}" IsReadOnly="True"/>
+                        <DataGridTextColumn Header="카테고리" Binding="{Binding Path=Prd_category}" IsReadOnly="True" Visibility="Collapsed"/>
+                        <DataGridTextColumn Header="상품속성" Binding="{Binding Path=Prd_attr}" IsReadOnly="True" Visibility="Collapsed"/>
                         <DataGridTextColumn Header="상품재고" Binding="{Binding Path=Prd_stock}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="생성일" Binding="{Binding Path=Created_date}" IsReadOnly="True"/>
                         <DataGridTextColumn Header="수정일" Binding="{Binding Path=Updated_date}" IsReadOnly="True"/>

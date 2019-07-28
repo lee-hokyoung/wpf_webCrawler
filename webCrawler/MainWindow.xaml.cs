@@ -8,10 +8,12 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -34,6 +36,8 @@ namespace webCrawler
         public List<Tuple<string, string>> error_ids = null;
         public string main_url = "https://world.taobao.com/";
         public string login_url = "https://world.taobao.com/markets/all/login";
+        public string login_frame_url = "https://login.taobao.com/member/login.jhtml?style=miniall&newMini2=true&full_redirect=true&&redirectURL=http%3A%2F%2Fworld.taobao.com%2F&from=worldlogin&minipara=1,1,1&from=worldlogin";
+        public PuppeteerSharp.Page puppeteer_page = null;
 
         // 상품리스트 파싱하기 & prd_list 에 저장하기
         ArrayList prd_list = new ArrayList();           // Product 클래스를 담아두는 ArrayList
@@ -45,18 +49,136 @@ namespace webCrawler
         // 제외상품 리스트 관련 변수
         List<ViewModel.delProductViewModel> delPrdView_list = new List<ViewModel.delProductViewModel>();
 
+        CefSettings settings = new CefSettings();
+
         public MainWindow()
         {
             InitializeComponent();
+            loginTaoBao("supereggsong", "alsdud1218!");
             this.DataContext = new ViewModel.ProductViewModel();
             InitializeChromium();
             getDbData();
+        }
+        // puppeteer 로그인
+        private async void loginTaoBao(string id, string pwd)
+        {
+            try
+            {
+                string test_url = "https://intoli.com/blog/not-possible-to-block-chrome-headless/chrome-headless-test.html";
+                string chrome_exe_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
+                doc_opacity.Visibility = Visibility.Visible;
+                doc_status.Visibility = Visibility.Visible;
+                txt_crawling_count.Text = "프로그램 작동에 필요한 리소스를 수집하는 중입니다.";
+                await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
+                string[] args = new string[] {
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-infobars",
+                "--window-position=0,0",
+                "--ignore-certifcate-errors",
+                "--ignore-certifcate-errors-spki-list",
+                "--disable-webdriver"
+            };
+                var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                {
+                    Headless = true,
+                    Args = args,
+                    IgnoreHTTPSErrors = true,
+                    ExecutablePath = chrome_exe_path
+                });
+                Dictionary<string, string> header = new Dictionary<string, string>();
+                header.Add("Referer", "https://world.taobao.com/");
+                var overrideNavigatorWebdriver = @"() => {
+                    Object.defineProperty(navigator, 'webdriver', {
+                        get: () => false,
+                    });
+                }";
+                var overridePermission = @"() => {
+                    const originalQuery = window.navigator.permissions.query;
+                    return window.navigator.permissions.query = (parameters) => (
+                        parameters.name === 'notifications' ?
+                        Promise.resolve({ state: Notification.permission }) :
+                        originalQuery(parameters)
+                    );
+                }";
+                var overrideChrome = @"() => {
+                    Object.defineProperty(navigator, 'chrome', {
+                        runtime: {},
+                    });
+                }";
+                var overridePlugin = @"() => {
+                    Object.defineProperty(navigator, 'plugins', {
+                        get: () => [1, 2, 3, 4, 5],
+                    });
+                }";
+                puppeteer_page = await browser.NewPageAsync();
+                await puppeteer_page.SetUserAgentAsync("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36");
+                await puppeteer_page.SetExtraHttpHeadersAsync(header);
+                await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overrideNavigatorWebdriver);
+                await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overridePermission);
+                await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overrideChrome);
+                await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overridePlugin);
+                await puppeteer_page.GoToAsync(login_frame_url, new NavigationOptions
+                {
+                     WaitUntil = new WaitUntilNavigation[]
+                     {
+                        WaitUntilNavigation.Load
+                     }
+                });
+                await puppeteer_page.ScreenshotAsync("d:\\screenshot.png");
+                await puppeteer_page.TypeAsync("#TPL_username_1", "supereggsong");
+                await puppeteer_page.TypeAsync("#TPL_password_1", "alsdud1218!");
+                var slider = await puppeteer_page.QuerySelectorAsync("#nc_1_wrapper");
+                if (slider != null)
+                {
+                    await puppeteer_page.Mouse.MoveAsync(260, 210);
+                    await puppeteer_page.Mouse.DownAsync();
+                    await puppeteer_page.Mouse.MoveAsync(550, 210);
+                    await puppeteer_page.Mouse.UpAsync();
+                }
+                await puppeteer_page.ClickAsync("#J_SubmitStatic");
+                await puppeteer_page.WaitForTimeoutAsync(5000);
+                var current_url = puppeteer_page.Url;
+                if(current_url.IndexOf("login") > -1)
+                {
+                    await puppeteer_page.TypeAsync("#TPL_username_1", "supereggsong");
+                    await puppeteer_page.TypeAsync("#TPL_password_1", "alsdud1218!");
+                    if (slider != null)
+                    {
+                        await puppeteer_page.Mouse.MoveAsync(260, 210);
+                        await puppeteer_page.Mouse.DownAsync();
+                        await puppeteer_page.Mouse.MoveAsync(550, 210);
+                        await puppeteer_page.Mouse.UpAsync();
+                    }
+                }
+            }
+            catch(TimeoutException tex)
+            {
+                MessageBox.Show(tex.ToString());
+                throw tex;
+            }
+            catch(Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                throw e;
+            }
+            finally
+            {
+                doc_opacity.Visibility = Visibility.Collapsed;
+                doc_status.Visibility = Visibility.Collapsed;
+                txt_crawling_count.Text = "";
+            }
+            
         }
         private void InitializeChromium()
         {
             main_doc.Visibility = Visibility.Visible;
             myDb_doc.Visibility = Visibility.Collapsed;
-            CefSettings settings = new CefSettings();
+            //CefSettings settings = new CefSettings()
+            //{
+            //    CachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CefSharp\\Cache")
+            //};
+            settings.CachePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "CefSharp\\Cache");
             Cef.Initialize(settings);
 
             browser = new ChromiumWebBrowser();
@@ -97,6 +219,42 @@ namespace webCrawler
         {
             if (e.Frame.IsMain)
             {
+                //new Task(() =>
+                //{
+                //    // Wait a little bit, because Chrome won't have rendered the new page yet.
+                //    // There's no event that tells us when a page has been fully rendered.
+                //    Thread.Sleep(100);
+
+                //    // Wait for the screenshot to be taken.
+                //    var task = browser.ScreenshotAsync();
+                //    task.Wait();
+
+                //    // Make a file to save it to (e.g. C:\Users\jan\Desktop\CefSharp screenshot.png)
+                //    var screenshotPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "CefSharp screenshot.png");
+
+                //    Console.WriteLine();
+                //    Console.WriteLine("Screenshot ready.  Saving to {0}", screenshotPath);
+
+                //    // Save the Bitmap to the path.
+                //    // The image type is auto-detected via the ".png" extension.
+                //    task.Result.Save(screenshotPath);
+
+                //    // We no longer need the Bitmap.
+                //    // Dispose it to avoid keeping the memory alive.  Especially important in 32-bit applications.
+                //    task.Result.Dispose();
+
+                //    Console.WriteLine("Screenshot saved.  Launching your default image viewer...");
+
+                //    // Tell Windows to launch the saved image.
+                //    Process.Start(screenshotPath);
+
+                //    Console.WriteLine("Image viewer launched.  Press any key to exit.");
+                //}).Start();
+
+
+                //if (e.Url == main_url) {
+                //    var c = Cef.GetGlobalCookieManager();
+                //}
                 //browser.GetSourceAsync().ContinueWith(task =>
                 //{
                 //    strHtml = task.Result;
@@ -564,74 +722,141 @@ namespace webCrawler
             }
         }
         // 상품정보 가져오기
-        private async void btnGetProductInfo_Click(object sender, RoutedEventArgs e)
+        private void btnGetProductInfo_Click(object sender, RoutedEventArgs e)
         {
-            doc_opacity.Visibility = Visibility.Visible;
-            doc_status.Visibility = Visibility.Visible;
-            txt_crawling_status.Text = "상품 수집에 필요한 리소스를 받아오는 중입니다.";
-            await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
-            string url = "";
-            int count = 0, chk_count = 0 ;
+            int chk_count = 0;
+            List<string> detail_urls = new List<string>();
             html_node = new List<string>();
             success_ids = new List<string>();
             error_ids = new List<Tuple<string, string>>();
-            var browser = await Puppeteer.LaunchAsync(new LaunchOptions
-            {
-                Headless = true
-            });
-            try
-            {
-                foreach (ViewModel.ProductViewModel prd in prdView_list)
-                {
-                    if (prd.IsSelected) chk_count++;
-                }
 
-                foreach (ViewModel.ProductViewModel prd in prdView_list)
-                {
-                    try
-                    {
-                        if (prd.IsSelected)
-                        {
+            // Take screenshots of 3 web pages, and save the screenshots to C:\testX.png
 
-                            using (var page = await browser.NewPageAsync())
-                            {
-                                count++;
-                                url = "https://detail.tmall.com/item.htm?id=" + prd.Id;
-                                txt_crawling_count.Text = count.ToString() + "/" + chk_count.ToString() + "상품 수집 중";
-                                txt_crawling_status.Text = url;
-                                var response = await page.GoToAsync(url, new NavigationOptions
-                                {
-                                    WaitUntil = new WaitUntilNavigation[]
-                                    {
-                                        WaitUntilNavigation.Networkidle0
-                                    }
-                                });
-                                html_node.Add(await page.GetContentAsync());
-                                success_ids.Add(prd.Id);
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        error_ids.Add(Tuple.Create(prd.Id, ex.ToString()));
-                        continue;
-                        //throw ex;
-                    }
+
+            foreach (ViewModel.ProductViewModel prd in prdView_list)
+            {
+                if (prd.IsSelected)
+                {
+                    chk_count++;
+                    detail_urls.Add(prd.Id);
                 }
-                
-                //await browser.CloseAsync();
             }
-            catch(Exception exc)
-            {
-                throw exc;
-            }
-            finally
-            {
-                await browser.CloseAsync();
-                // 상품 디테일 파싱하기
-                parsingPrdDetail(html_node);
-            }
+
+            getDetailHtml(detail_urls);
         }
+        #region puppeteer로 수집하는 것
+        //    txt_crawling_status.Text = "상품 수집에 필요한 리소스를 받아오는 중입니다.";
+        //    string url = "";
+        //    try
+        //    {
+
+
+
+        //        foreach (ViewModel.ProductViewModel prd in prdView_list)
+        //        {
+        //            if (prd.IsSelected) chk_count++;
+        //        }
+
+        //        foreach (ViewModel.ProductViewModel prd in prdView_list)
+        //        {
+        //            try
+        //            {
+        //                if (prd.IsSelected)
+        //                {
+        //                    using (var page = await browser.NewPageAsync())
+        //                    {
+        //                        count++;
+        //                        url = "https://detail.tmall.com/item.htm?id=" + prd.Id;
+        //                        txt_crawling_count.Text = count.ToString() + "/" + chk_count.ToString() + "상품 수집 중";
+        //                        txt_crawling_status.Text = url;
+        //                        var response = await page.GoToAsync(url, new NavigationOptions
+        //                        {
+        //                            WaitUntil = new WaitUntilNavigation[]
+        //                            {
+        //                                WaitUntilNavigation.Networkidle0
+        //                            }
+        //                        });
+        //                        var cookies = new CookieParam { Name = "", Value = "" };
+
+        //                        await page.SetCookieAsync(new CookieParam
+        //                        {
+        //                            Name = "test",
+        //                            Value = "1234"
+        //                        });
+        //                        await page.ClickAsync("#sufei-dialog-close");
+        //                        await page.WaitForTimeoutAsync(4000);
+
+        //                        //await page.GoToAsync(url);
+        //                        //await page.SetCookieAsync(new CookieParam
+        //                        //{
+        //                        //    Name = "hng", Value = "KR % 7Czh - CN % 7CKRW % 7C410"
+        //                        //});
+        //                        //await page.WaitForSelectorAsync(".tm-promo-price");
+
+        //                        html_node.Add(await page.GetContentAsync());
+        //                        success_ids.Add(prd.Id);
+        //                    }
+        //                }
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                error_ids.Add(Tuple.Create(prd.Id, ex.ToString()));
+        //                continue;
+        //                //throw ex;
+        //            }
+        //        }
+
+        //        //await browser.CloseAsync();
+        //    }
+        //    catch (Exception exc)
+        //    {
+        //        throw exc;
+        //    }
+        //    finally
+        //    {
+        //        await browser.CloseAsync();
+        //        // 상품 디테일 파싱하기
+        //        parsingPrdDetail(html_node);
+        //    }
+        //}
+        #endregion
+
+        private async void getDetailHtml(List<string> detail_urls)
+        {
+            int count = 0;
+            doc_opacity.Visibility = Visibility.Visible;
+            doc_status.Visibility = Visibility.Visible;
+            foreach (string id in detail_urls)
+            {
+                try
+                {
+                    count++;
+                    txt_crawling_count.Text = count.ToString() + "/" + detail_urls.Count + "상품 수집 중";
+                    txt_crawling_status.Text = id;
+                    var response = await puppeteer_page.GoToAsync("https://detail.tmall.com/item.htm?id=" + id, new NavigationOptions
+                    {
+                        WaitUntil = new WaitUntilNavigation[]
+                        {
+                        WaitUntilNavigation.Networkidle0
+                        }
+                    });
+                    html_node.Add(await puppeteer_page.GetContentAsync());
+                    success_ids.Add(id);
+                }
+                catch (TimeoutException t_ex)
+                {
+                    error_ids.Add(Tuple.Create(id, t_ex.ToString()));
+                    continue;
+                }
+                catch (Exception ex)
+                {
+                    error_ids.Add(Tuple.Create(id, ex.ToString()));
+                    continue;
+                }
+            }
+            parsingPrdDetail(html_node);
+        }
+
         private void BtnMyDB_Click(object sender, RoutedEventArgs e)
         {
             Window win_myDB = (Window)Application.LoadComponent(new Uri("myDB.xaml", UriKind.Relative));
@@ -707,6 +932,7 @@ namespace webCrawler
 
         #region MyDB & excel download
         List<ViewModel.MyDBViewModel> myDBView_list;
+        //  상품정보 읽어오기
         private void getMyDB()
         {
             MySqlConnection conn = null;
@@ -746,6 +972,7 @@ namespace webCrawler
                 if (conn != null) conn.Close();
             }
         }
+        // DB List 전체 체크
         private void ChkMyDb_Checked(object sender, RoutedEventArgs e)
         {
             foreach (ViewModel.MyDBViewModel row in myDBView_list)
@@ -753,7 +980,7 @@ namespace webCrawler
                 row.IsSelected = true;
             }
         }
-
+        // DB List 전체 체크 해제
         private void ChkMyDb_Unchecked(object sender, RoutedEventArgs e)
         {
             foreach (ViewModel.MyDBViewModel row in myDBView_list)
@@ -819,8 +1046,8 @@ namespace webCrawler
         // 목록비우기 클릭
         private void BtnClearPrdList_Click(object sender, RoutedEventArgs e)
         {
-            clearDbTable();
-            getDbData();
+            clearDbTable();     // 목록비우기
+            getDbData();        // 상품정보 읽어오기
         }
         // 목록비우기
         private void clearDbTable()
@@ -869,7 +1096,7 @@ namespace webCrawler
                 if (conn != null) conn.Close();
             }
         }
-
+        // 제외상품 전체 체크
         private void ChkCtrlDel_Checked(object sender, RoutedEventArgs e)
         {
             foreach(ViewModel.delProductViewModel row in delPrdView_list)
@@ -877,7 +1104,7 @@ namespace webCrawler
                 row.IsSelected = true;
             }
         }
-
+        // 제외상품 전체 체크 해제
         private void ChkCtrlDel_Unchecked(object sender, RoutedEventArgs e)
         {
             foreach (ViewModel.delProductViewModel row in delPrdView_list)
@@ -1024,6 +1251,7 @@ namespace webCrawler
                 Marshal.ReleaseComObject(excel);
             }
         }
+
         #endregion
         // 수집결과 출력
         private void fnGenResult()
@@ -1038,6 +1266,12 @@ namespace webCrawler
                 );
             }
             dg_result.ItemsSource = result_view_list;
+        }
+        // 시스템이 종료될 때 puppeteer도 함께 종료시킴.
+        private async void Window_Closed(object sender, EventArgs e)
+        {
+            if (!puppeteer_page.IsClosed) await puppeteer_page.CloseAsync();
+            if (!browser.IsDisposed) browser.Dispose();
         }
     }
 }
