@@ -54,9 +54,9 @@ namespace webCrawler
         public MainWindow()
         {
             InitializeComponent();
-            loginTaoBao("supereggsong", "alsdud1218!");
             this.DataContext = new ViewModel.ProductViewModel();
             InitializeChromium();
+            loginTaoBao("supereggsong", "alsdud1218!");
             getDbData();
         }
         // puppeteer 로그인
@@ -65,10 +65,12 @@ namespace webCrawler
             try
             {
                 string test_url = "https://intoli.com/blog/not-possible-to-block-chrome-headless/chrome-headless-test.html";
+                string test_url2 = "https://bot.sannysoft.com/";
                 string chrome_exe_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
                 doc_opacity.Visibility = Visibility.Visible;
                 doc_status.Visibility = Visibility.Visible;
                 txt_crawling_count.Text = "프로그램 작동에 필요한 리소스를 수집하는 중입니다.";
+                txt_crawling_status.Text = "크롬브라우저 구동중... 잠시만 기다려 주세요";
                 await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
                 string[] args = new string[] {
                 "--no-sandbox",
@@ -81,7 +83,7 @@ namespace webCrawler
             };
                 var browser = await Puppeteer.LaunchAsync(new LaunchOptions
                 {
-                    Headless = true,
+                    Headless = false,
                     Args = args,
                     IgnoreHTTPSErrors = true,
                     ExecutablePath = chrome_exe_path
@@ -118,6 +120,7 @@ namespace webCrawler
                 await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overridePermission);
                 await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overrideChrome);
                 await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overridePlugin);
+                await puppeteer_page.SetViewportAsync(new ViewPortOptions { Width = 0, Height = 0 });
                 await puppeteer_page.GoToAsync(login_frame_url, new NavigationOptions
                 {
                      WaitUntil = new WaitUntilNavigation[]
@@ -927,6 +930,7 @@ namespace webCrawler
                 case "美妆/个护": url = "https://s.taobao.com/search?q=%E7%BE%8E%E5%AE%B9"; break;
             }
             browser.Address = url;
+            clearDbTable();     // 목록비우기
         }
         #endregion
 
