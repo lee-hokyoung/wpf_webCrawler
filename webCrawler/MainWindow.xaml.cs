@@ -185,7 +185,7 @@ namespace webCrawler
             Cef.Initialize(settings);
 
             browser = new ChromiumWebBrowser();
-            browser.Address = login_url;
+            browser.Address = main_url;
             
             Grid.SetRow(browser, 0);
             
@@ -388,7 +388,8 @@ namespace webCrawler
                 foreach (var node in html_node)
                 {
                     try {
-                        if (node == null) continue;
+                        if (node == null)
+                            continue;
                         // 상품 속성 : prd_attr
                         doc = new HtmlDocument();
                         doc.LoadHtml(node);
@@ -436,7 +437,7 @@ namespace webCrawler
                         else
                         {
                             promo = doc.DocumentNode.SelectNodes("//em[@id='J_PromoPriceNum']");
-                            sql_prd_promo = promo[0].InnerText;
+                            if(promo != null) sql_prd_promo = promo[0].InnerText;
                         }
                         // 상품 옵션
                         opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-sale-prop')]");
@@ -517,10 +518,38 @@ namespace webCrawler
                                     idx++;
                                     switch (idx)
                                     {
-                                        case 1: sql_add_img_1 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml; break;
-                                        case 2: sql_add_img_2 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml; break;
-                                        case 3: sql_add_img_3 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml; break;
-                                        case 4: sql_add_img_4 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml; break;
+                                        case 1:
+                                            if (item.ChildNodes.Count == 1)
+                                                sql_add_img_1 = item.ChildNodes["a"].InnerHtml;
+                                            else if (item.ChildNodes[1].Name == "a")
+                                                sql_add_img_1 = item.ChildNodes["a"].InnerHtml;
+                                            else if (item.ChildNodes[1].Name == "div")
+                                                sql_add_img_1 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
+                                            break;
+                                        case 2:
+                                            if (item.ChildNodes.Count == 1)
+                                                sql_add_img_2 = item.ChildNodes["a"].InnerHtml;
+                                            else if (item.ChildNodes[1].Name == "a")
+                                                sql_add_img_2 = item.ChildNodes["a"].InnerHtml;
+                                            else if(item.ChildNodes[1].Name == "div")
+                                                sql_add_img_2 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
+                                            break;
+                                        case 3:
+                                            if (item.ChildNodes.Count == 1)
+                                                sql_add_img_3 = item.ChildNodes["a"].InnerHtml;
+                                            else if (item.ChildNodes[1].Name == "a")
+                                                sql_add_img_3 = item.ChildNodes["a"].InnerHtml;
+                                            else if(item.ChildNodes[1].Name == "div")
+                                                sql_add_img_3 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
+                                            break;
+                                        case 4:
+                                            if (item.ChildNodes.Count == 1)
+                                                sql_add_img_4 = item.ChildNodes["a"].InnerHtml;
+                                            else if (item.ChildNodes[1].Name == "a")
+                                                sql_add_img_4 = item.ChildNodes["a"].InnerHtml;
+                                            else if (item.ChildNodes[1].Name == "div")
+                                                sql_add_img_4 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
+                                            break;
                                     }
                                 }
                             }
