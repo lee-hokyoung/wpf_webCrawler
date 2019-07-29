@@ -65,6 +65,8 @@ namespace webCrawler
             try
             {
                 string test_url = "https://intoli.com/blog/not-possible-to-block-chrome-headless/chrome-headless-test.html";
+                string test_url2 = "https://intoli.com/blog/making-chrome-headless-undetectable/chrome-headless-test.html";
+                string test_url3 = "https://bot.sannysoft.com/";
                 string chrome_exe_path = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe";
                 doc_opacity.Visibility = Visibility.Visible;
                 doc_status.Visibility = Visibility.Visible;
@@ -77,8 +79,7 @@ namespace webCrawler
                 "--window-position=0,0",
                 "--ignore-certifcate-errors",
                 "--ignore-certifcate-errors-spki-list",
-                "--disable-webdriver"
-            };
+                };
                 var browser = await Puppeteer.LaunchAsync(new LaunchOptions
                 {
                     Headless = true,
@@ -102,9 +103,9 @@ namespace webCrawler
                     );
                 }";
                 var overrideChrome = @"() => {
-                    Object.defineProperty(navigator, 'chrome', {
+                    window.chrome = {
                         runtime: {},
-                    });
+                    };
                 }";
                 var overridePlugin = @"() => {
                     Object.defineProperty(navigator, 'plugins', {
@@ -118,23 +119,29 @@ namespace webCrawler
                 await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overridePermission);
                 await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overrideChrome);
                 await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overridePlugin);
-                await puppeteer_page.GoToAsync(login_frame_url, new NavigationOptions
+                await puppeteer_page.GoToAsync(test_url3, new NavigationOptions
                 {
                      WaitUntil = new WaitUntilNavigation[]
                      {
                         WaitUntilNavigation.Load
                      }
                 });
+                await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(@"$('#webdriver-result').html(navigator.webdriver.toString())");
+                //await puppeteer_page.WaitForTimeoutAsync(3000);
                 await puppeteer_page.ScreenshotAsync("d:\\screenshot.png");
                 await puppeteer_page.TypeAsync("#TPL_username_1", "supereggsong");
                 await puppeteer_page.TypeAsync("#TPL_password_1", "alsdud1218!");
                 var slider = await puppeteer_page.QuerySelectorAsync("#nc_1_wrapper");
                 if (slider != null)
                 {
+                    await puppeteer_page.ScreenshotAsync("d:\\mouse_move_before.png");
+
                     await puppeteer_page.Mouse.MoveAsync(260, 210);
                     await puppeteer_page.Mouse.DownAsync();
                     await puppeteer_page.Mouse.MoveAsync(550, 210);
                     await puppeteer_page.Mouse.UpAsync();
+
+                    await puppeteer_page.ScreenshotAsync("d:\\mouse_move_after.png");
                 }
                 await puppeteer_page.ClickAsync("#J_SubmitStatic");
                 await puppeteer_page.WaitForTimeoutAsync(5000);
