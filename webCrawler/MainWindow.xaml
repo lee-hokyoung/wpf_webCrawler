@@ -25,7 +25,7 @@
         <!--헤더부분 끝-->
 
         <!--본문 부분 Main -->
-        <DockPanel Name="main_doc" Grid.Row="1" Visibility="Visible">
+        <DockPanel Name="main_doc" Grid.Row="1" Visibility="Collapsed">
             <Grid Name="grid">
                 <Grid.RowDefinitions>
                     <!--<RowDefinition Height="30"></RowDefinition>-->
@@ -110,7 +110,7 @@
         <!--본문 부분 Main 끝-->
 
         <!--본문 부분 MyDB-->
-        <DockPanel Name="myDb_doc" Grid.Row="1" Visibility="Collapsed">
+        <DockPanel Name="myDb_doc" Grid.Row="1" Visibility="Visible">
             <Grid Name="mydb_grid">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="5*"></RowDefinition>
@@ -159,6 +159,7 @@
                 <Canvas Grid.Row="1">
                     <Button Name="btnDownloadExcel" Canvas.Top="10" Canvas.Left="10" Width="80" Height="40" Content="엑셀&#x0a;다운로드" Click="BtnDownloadExcel_Click"></Button>
                     <Button Name="btnDelProduct" Canvas.Top="10" Canvas.Left="100" Width="80" Height="40" Content="수집제외" Click="BtnDelProduct_Click"></Button>
+                    <Button Name="btnReCollection" Canvas.Top="10" Canvas.Left="190" Width="80" Height="40" Content="상품재수집" Click="BtnReCollection_Click"></Button>
                 </Canvas>
             </Grid>
         </DockPanel>

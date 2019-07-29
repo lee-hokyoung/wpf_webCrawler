@@ -38,7 +38,7 @@ namespace webCrawler
         public string login_url = "https://world.taobao.com/markets/all/login";
         public string login_frame_url = "https://login.taobao.com/member/login.jhtml?style=miniall&newMini2=true&full_redirect=true&&redirectURL=http%3A%2F%2Fworld.taobao.com%2F&from=worldlogin&minipara=1,1,1&from=worldlogin";
         public PuppeteerSharp.Page puppeteer_page = null;
-
+        public Browser pup_browser;
         // 상품리스트 파싱하기 & prd_list 에 저장하기
         ArrayList prd_list = new ArrayList();           // Product 클래스를 담아두는 ArrayList
         List<string> id_list = new List<string>();      // 상품 중복 파싱을 방지하기 위한 상품코드 저장하는 List
@@ -56,8 +56,8 @@ namespace webCrawler
             InitializeComponent();
             this.DataContext = new ViewModel.ProductViewModel();
             InitializeChromium();
-            loginTaoBao("supereggsong", "alsdud1218!");
             getDbData();
+            loginTaoBao("supereggsong", "alsdud1218!");
         }
         // puppeteer 로그인
         private async void loginTaoBao(string id, string pwd)
@@ -70,18 +70,18 @@ namespace webCrawler
                 doc_opacity.Visibility = Visibility.Visible;
                 doc_status.Visibility = Visibility.Visible;
                 txt_crawling_count.Text = "프로그램 작동에 필요한 리소스를 수집하는 중입니다.";
-                txt_crawling_status.Text = "크롬브라우저 구동중... 잠시만 기다려 주세요";
+                txt_crawling_status.Text = "크롬브라우저 구동중" + System.Environment.NewLine +  "이 창이 닫히면 구동된 크롬 브라우저에서 로그인해주세요";
                 await new BrowserFetcher().DownloadAsync(BrowserFetcher.DefaultRevision);
                 string[] args = new string[] {
-                "--no-sandbox",
-                "--disable-setuid-sandbox",
-                "--disable-infobars",
-                "--window-position=0,0",
-                "--ignore-certifcate-errors",
-                "--ignore-certifcate-errors-spki-list",
-                "--disable-webdriver"
-            };
-                var browser = await Puppeteer.LaunchAsync(new LaunchOptions
+                    "--no-sandbox",
+                    "--disable-setuid-sandbox",
+                    "--disable-infobars",
+                    "--window-position=0,0",
+                    "--ignore-certifcate-errors",
+                    "--ignore-certifcate-errors-spki-list",
+                    "--disable-webdriver"
+                };
+                pup_browser = await Puppeteer.LaunchAsync(new LaunchOptions
                 {
                     Headless = false,
                     Args = args,
@@ -113,7 +113,7 @@ namespace webCrawler
                         get: () => [1, 2, 3, 4, 5],
                     });
                 }";
-                puppeteer_page = await browser.NewPageAsync();
+                puppeteer_page = await pup_browser.NewPageAsync();
                 await puppeteer_page.SetUserAgentAsync("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/75.0.3770.142 Safari/537.36");
                 await puppeteer_page.SetExtraHttpHeadersAsync(header);
                 await puppeteer_page.EvaluateFunctionOnNewDocumentAsync(overrideNavigatorWebdriver);
@@ -128,32 +128,32 @@ namespace webCrawler
                         WaitUntilNavigation.Load
                      }
                 });
-                await puppeteer_page.ScreenshotAsync("d:\\screenshot.png");
-                await puppeteer_page.TypeAsync("#TPL_username_1", "supereggsong");
-                await puppeteer_page.TypeAsync("#TPL_password_1", "alsdud1218!");
-                var slider = await puppeteer_page.QuerySelectorAsync("#nc_1_wrapper");
-                if (slider != null)
-                {
-                    await puppeteer_page.Mouse.MoveAsync(260, 210);
-                    await puppeteer_page.Mouse.DownAsync();
-                    await puppeteer_page.Mouse.MoveAsync(550, 210);
-                    await puppeteer_page.Mouse.UpAsync();
-                }
-                await puppeteer_page.ClickAsync("#J_SubmitStatic");
-                await puppeteer_page.WaitForTimeoutAsync(5000);
-                var current_url = puppeteer_page.Url;
-                if(current_url.IndexOf("login") > -1)
-                {
-                    await puppeteer_page.TypeAsync("#TPL_username_1", "supereggsong");
-                    await puppeteer_page.TypeAsync("#TPL_password_1", "alsdud1218!");
-                    if (slider != null)
-                    {
-                        await puppeteer_page.Mouse.MoveAsync(260, 210);
-                        await puppeteer_page.Mouse.DownAsync();
-                        await puppeteer_page.Mouse.MoveAsync(550, 210);
-                        await puppeteer_page.Mouse.UpAsync();
-                    }
-                }
+                //await puppeteer_page.ScreenshotAsync("d:\\screenshot.png");
+                //await puppeteer_page.TypeAsync("#TPL_username_1", "supereggsong");
+                //await puppeteer_page.TypeAsync("#TPL_password_1", "alsdud1218!");
+                //var slider = await puppeteer_page.QuerySelectorAsync("#nc_1_wrapper");
+                //if (slider != null)
+                //{
+                //    await puppeteer_page.Mouse.MoveAsync(260, 210);
+                //    await puppeteer_page.Mouse.DownAsync();
+                //    await puppeteer_page.Mouse.MoveAsync(550, 210);
+                //    await puppeteer_page.Mouse.UpAsync();
+                //}
+                //await puppeteer_page.ClickAsync("#J_SubmitStatic");
+                //await puppeteer_page.WaitForTimeoutAsync(5000);
+                //var current_url = puppeteer_page.Url;
+                //if(current_url.IndexOf("login") > -1)
+                //{
+                //    await puppeteer_page.TypeAsync("#TPL_username_1", "supereggsong");
+                //    await puppeteer_page.TypeAsync("#TPL_password_1", "alsdud1218!");
+                //    if (slider != null)
+                //    {
+                //        await puppeteer_page.Mouse.MoveAsync(260, 210);
+                //        await puppeteer_page.Mouse.DownAsync();
+                //        await puppeteer_page.Mouse.MoveAsync(550, 210);
+                //        await puppeteer_page.Mouse.UpAsync();
+                //    }
+                //}
             }
             catch(TimeoutException tex)
             {
@@ -368,7 +368,7 @@ namespace webCrawler
         private void parsingPrdDetail(List<string> html_node)
         {
             HtmlDocument doc = null, doc_img = null;
-            HtmlNodeCollection img_wrap = null, imgs = null, price = null, promo = null, opts = null, stock = null, attr = null, additional_image = null;
+            HtmlNodeCollection node_id = null, img_wrap = null, imgs = null, price = null, promo = null, opts = null, stock = null, attr = null, additional_image = null;
             string[] strImg = null;
 
             StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_price, prd_promo, prd_stock, detail_img, " +
@@ -377,7 +377,7 @@ namespace webCrawler
             string sql_opt_1 = "", sql_opt_val_1 = "", sql_opt_2 = "", sql_opt_val_2 = "", sql_opt_3 = "", sql_opt_val_3 = "", sql_prd_attr = "",
                 sql_add_img_1 = "", sql_add_img_2 ="", sql_add_img_3 = "", sql_add_img_4 = "";
             List<string> update_rows = new List<string>();
-
+            List<string> failed_codes = new List<string>();
             MySqlConnection conn = null;
 
             try
@@ -387,130 +387,182 @@ namespace webCrawler
 
                 foreach (var node in html_node)
                 {
-                    if (node == null) continue;
-                    // 상품 속성 : prd_attr
-                    doc = new HtmlDocument();
-                    doc.LoadHtml(node);
+                    try {
+                        if (node == null) continue;
+                        // 상품 속성 : prd_attr
+                        doc = new HtmlDocument();
+                        doc.LoadHtml(node);
 
-                    sql_id = doc.DocumentNode.SelectNodes("//div[@id='LineZing']")[0].Attributes["itemid"].Value;
-
-                    // 상품 상세 이미지 : prd_img
-                    img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
-                    if (img_wrap != null)
-                    {
-                        doc_img = new HtmlDocument();
-                        doc_img.LoadHtml(img_wrap[0].InnerHtml);
-                        imgs = doc_img.DocumentNode.SelectNodes("//img[@data-ks-lazyload]");
-                        if (imgs != null)
+                        node_id = doc.DocumentNode.SelectNodes("//div[@id='LineZing']");
+                        if(node_id != null)
                         {
-                            strImg = new string[imgs.Count];
-                            for (var i = 0; i < imgs.Count; i++)
-                            {
-                                strImg[i] = string.Format("<img src='{0}'>",  imgs[i].Attributes["data-ks-lazyload"].Value);
-                            }
-                            //sql_detail_img = String.Join("&$%", strImg);
-                            sql_detail_img = String.Join("", strImg);
+                            sql_id = node_id[0].Attributes["itemid"].Value;
                         }
-                    }
-                    // 타오바오 상품가격 : prd_price
-                    price = doc.DocumentNode.SelectNodes("//dl[@class='tm-price-panel']/dd/span");
-                    if (price != null) sql_prd_price = price[0].InnerText;
-
-                    // 프로모션 가격(할인된 가격, 판매가격) : prd_promo
-                    promo = doc.DocumentNode.SelectNodes("//div[@class='tm-promo-price']/span");
-                    if (promo != null) sql_prd_promo = promo[0].InnerText;
-
-                    // 상품 옵션
-                    opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-sale-prop')]");
-                    if (opts != null)
-                    {
-                        List<string> str_opts_value = new List<string>(); // 옵션 값을 담아두는 변수 선언
-                        string opt_val = "";    // 옵션명을 담아두는 변수
-                        for (var i = 0; i < opts.Count; i++)
+                        else
                         {
-                            string opt_name = opts[i].ChildNodes["dt"].InnerHtml;
-                            HtmlNodeCollection opt_vals = opts[i].ChildNodes["dd"].ChildNodes["ul"].SelectNodes("li");
-                            str_opts_value = new List<string>();
-                            foreach (HtmlNode child in opt_vals)
+                            node_id = doc.DocumentNode.SelectNodes("//div[@id='J_Pine']");
+                            if (node_id != null) sql_id = node_id[0].Attributes["data-itemid"].Value;
+                        }
+                        // 상품 상세 이미지 : prd_img
+                        img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
+                        if (img_wrap != null)
+                        {
+                            doc_img = new HtmlDocument();
+                            doc_img.LoadHtml(img_wrap[0].InnerHtml);
+                            imgs = doc_img.DocumentNode.SelectNodes("//img[@data-ks-lazyload]");
+                            if (imgs != null)
                             {
-                                str_opts_value.Add(child.ChildNodes["a"].ChildNodes["span"].InnerText);
-                            }
-                            opt_val = string.Join( ",", str_opts_value); //  옵션값 -> 콤마(,)로 구분함.
-                            switch (i)
-                            {
-                                case 0:
-                                    sql_opt_1 = opt_name;
-                                    sql_opt_val_1 = opt_val;
-                                    break;
-                                case 1:
-                                    sql_opt_2 = opt_name;
-                                    sql_opt_val_2 = opt_val;
-                                    break;
-                                case 2:
-                                    sql_opt_3 = opt_name;
-                                    sql_opt_val_3 = opt_val;
-                                    break;
+                                strImg = new string[imgs.Count];
+                                for (var i = 0; i < imgs.Count; i++)
+                                {
+                                    strImg[i] = string.Format("<img src='{0}'>", imgs[i].Attributes["data-ks-lazyload"].Value);
+                                }
+                                //sql_detail_img = String.Join("&$%", strImg);
+                                sql_detail_img = String.Join("", strImg);
                             }
                         }
-                    }
-
-                    // 상품 재고 : J_SpanStock
-                    stock = doc.DocumentNode.SelectNodes("//em[@id='J_EmStock']");
-                    if(stock != null) sql_prd_stock = stock[0].InnerHtml;
-
-                    // 상품 세부 정보
-                    attr = doc.DocumentNode.SelectNodes("//ul[@id='J_AttrUL']/li");
-                    if (attr != null)
-                    {
-                        List<string> attr_list = new List<string>();
-                        foreach (HtmlNode item in attr)
+                        // 타오바오 상품가격 : prd_price
+                        price = doc.DocumentNode.SelectNodes("//dl[@class='tm-price-panel']/dd/span");
+                        if (price != null) sql_prd_price = price[0].InnerText;
+                        else
                         {
-                            attr_list.Add(item.InnerText.Replace("&nbsp;", ""));
+                            price = doc.DocumentNode.SelectNodes("//strong[@id='J_StrPrice']");
+                            if (price != null) sql_prd_price = price[0].InnerText;
                         }
-                        sql_prd_attr = string.Join(",", attr_list);
-                    }
-                    // 상품 추가 이미지
-                    additional_image = doc.DocumentNode.SelectNodes("//ul[@id='J_UlThumb']/li/a/img");
-                    if(additional_image.Count > 0)
-                    {
-                        int idx = 0;
-                        sql_add_img_1 = ""; sql_add_img_2 = ""; sql_add_img_3 = ""; sql_add_img_4 = "";
-                        foreach (HtmlNode item in additional_image)
+
+                        // 프로모션 가격(할인된 가격, 판매가격) : prd_promo
+                        promo = doc.DocumentNode.SelectNodes("//div[@class='tm-promo-price']/span");
+                        if (promo != null) sql_prd_promo = promo[0].InnerText;
+                        else
                         {
-                            idx++;
-                            switch (idx)
+                            promo = doc.DocumentNode.SelectNodes("//em[@id='J_PromoPriceNum']");
+                            sql_prd_promo = promo[0].InnerText;
+                        }
+                        // 상품 옵션
+                        opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-sale-prop')]");
+                        if(opts == null)
+                        {
+                            opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'J_Prop_measurement')]");
+                        }
+                        if (opts != null)
+                        {
+                            List<string> str_opts_value = new List<string>(); // 옵션 값을 담아두는 변수 선언
+                            string opt_val = "";    // 옵션명을 담아두는 변수
+                            for (var i = 0; i < opts.Count; i++)
                             {
-                                case 1: sql_add_img_1 = item.OuterHtml; break;
-                                case 2: sql_add_img_2 = item.OuterHtml; break;
-                                case 3: sql_add_img_3 = item.OuterHtml; break;
-                                case 4: sql_add_img_4 = item.OuterHtml; break;
+                                string opt_name = opts[i].ChildNodes["dt"].InnerHtml;
+                                HtmlNodeCollection opt_vals = opts[i].ChildNodes["dd"].ChildNodes["ul"].SelectNodes("li");
+                                str_opts_value = new List<string>();
+                                foreach (HtmlNode child in opt_vals)
+                                {
+                                    str_opts_value.Add(child.ChildNodes["a"].ChildNodes["span"].InnerText);
+                                }
+                                opt_val = string.Join(",", str_opts_value); //  옵션값 -> 콤마(,)로 구분함.
+                                switch (i)
+                                {
+                                    case 0:
+                                        sql_opt_1 = opt_name;
+                                        sql_opt_val_1 = opt_val;
+                                        break;
+                                    case 1:
+                                        sql_opt_2 = opt_name;
+                                        sql_opt_val_2 = opt_val;
+                                        break;
+                                    case 2:
+                                        sql_opt_3 = opt_name;
+                                        sql_opt_val_3 = opt_val;
+                                        break;
+                                }
                             }
                         }
+
+                        // 상품 재고 : J_SpanStock
+                        stock = doc.DocumentNode.SelectNodes("//em[@id='J_EmStock']");
+                        if (stock != null) sql_prd_stock = stock[0].InnerHtml;
+                        else
+                        {
+                            stock = doc.DocumentNode.SelectNodes("//span[@id='J_SpanStock']");
+                            if (stock != null) sql_prd_stock = stock[0].InnerHtml;
+                        }
+                        // 상품 세부 정보
+                        attr = doc.DocumentNode.SelectNodes("//ul[@id='J_AttrUL']/li");
+                        if(attr == null)
+                        {
+                            attr = doc.DocumentNode.SelectNodes("//div[@id='attributes']/ul/li");
+                        }
+                        if (attr != null)
+                        {
+                            List<string> attr_list = new List<string>();
+                            foreach (HtmlNode item in attr)
+                            {
+                                attr_list.Add(item.InnerText.Replace("&nbsp;", ""));
+                            }
+                            sql_prd_attr = string.Join(",", attr_list);
+                        }
+                        // 상품 추가 이미지
+                        additional_image = doc.DocumentNode.SelectNodes("//ul[@id='J_UlThumb']/li");
+
+                        if (additional_image.Count > 0)
+                        {
+                            int idx = 0;
+                            sql_add_img_1 = ""; sql_add_img_2 = ""; sql_add_img_3 = ""; sql_add_img_4 = "";
+                            foreach (HtmlNode item in additional_image)
+                            {
+                                if (item.Id == "J_VideoThumb")
+                                {
+
+                                }
+                                else
+                                {
+                                    idx++;
+                                    switch (idx)
+                                    {
+                                        case 1: sql_add_img_1 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml; break;
+                                        case 2: sql_add_img_2 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml; break;
+                                        case 3: sql_add_img_3 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml; break;
+                                        case 4: sql_add_img_4 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml; break;
+                                    }
+                                }
+                            }
+                        }
+                        update_rows.Add(string.Format("('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}','{12}','{13}','{14}','{15}','{16}')",
+                            MySqlHelper.EscapeString(sql_id),
+                            MySqlHelper.EscapeString(sql_prd_price),
+                            MySqlHelper.EscapeString(sql_prd_promo),
+                            MySqlHelper.EscapeString(sql_prd_stock),
+                            MySqlHelper.EscapeString(sql_detail_img),
+                            MySqlHelper.EscapeString(sql_opt_1),
+                            MySqlHelper.EscapeString(sql_opt_val_1),
+                            MySqlHelper.EscapeString(sql_opt_2),
+                            MySqlHelper.EscapeString(sql_opt_val_2),
+                            MySqlHelper.EscapeString(sql_opt_3),
+                            MySqlHelper.EscapeString(sql_opt_val_3),
+                            MySqlHelper.EscapeString(sql_prd_attr),
+                            MySqlHelper.EscapeString(sql_add_img_1),
+                            MySqlHelper.EscapeString(sql_add_img_2),
+                            MySqlHelper.EscapeString(sql_add_img_3),
+                            MySqlHelper.EscapeString(sql_add_img_4),
+                            MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))
+                            )
+                        );
                     }
-                    update_rows.Add(string.Format("('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}','{12}','{13}','{14}','{15}','{16}')",
-                        MySqlHelper.EscapeString(sql_id), 
-                        MySqlHelper.EscapeString(sql_prd_price),
-                        MySqlHelper.EscapeString(sql_prd_promo),
-                        MySqlHelper.EscapeString(sql_prd_stock),
-                        MySqlHelper.EscapeString(sql_detail_img),
-                        MySqlHelper.EscapeString(sql_opt_1),
-                        MySqlHelper.EscapeString(sql_opt_val_1),
-                        MySqlHelper.EscapeString(sql_opt_2),
-                        MySqlHelper.EscapeString(sql_opt_val_2),
-                        MySqlHelper.EscapeString(sql_opt_3),
-                        MySqlHelper.EscapeString(sql_opt_val_3),
-                        MySqlHelper.EscapeString(sql_prd_attr),
-                        MySqlHelper.EscapeString(sql_add_img_1),
-                        MySqlHelper.EscapeString(sql_add_img_2),
-                        MySqlHelper.EscapeString(sql_add_img_3),
-                        MySqlHelper.EscapeString(sql_add_img_4),
-                        MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))
-                        )
-                    );
+                    catch (Exception e) {
+                        continue;
+                    }
                 }
                 conn.Open();
                 if(update_rows.Count > 0)
                 {
+                    // tmp 테이블이 있는지 확인
+                    string isExist_tmp = "SELECT count(*) as cnt FROM information_schema.tables WHERE table_name = 'tmp' ; ";
+                    MySqlCommand count = new MySqlCommand(isExist_tmp, conn);
+                    int tmp_count = Convert.ToInt32(count.ExecuteScalar());
+                    if(tmp_count > 0)
+                    {
+                        MySqlCommand dropTmp = new MySqlCommand("drop table tmp; ", conn);
+                        dropTmp.ExecuteNonQuery();
+                    }
+
                     // 업데이트 하기 위한 임시 테이블 생성
                     string tmpCreate = "CREATE TABLE tmp(" +
                             "id VARCHAR(20), " +
@@ -836,6 +888,8 @@ namespace webCrawler
                     count++;
                     txt_crawling_count.Text = count.ToString() + "/" + detail_urls.Count + "상품 수집 중";
                     txt_crawling_status.Text = id;
+
+                    puppeteer_page = await pup_browser.NewPageAsync();
                     var response = await puppeteer_page.GoToAsync("https://detail.tmall.com/item.htm?id=" + id, new NavigationOptions
                     {
                         WaitUntil = new WaitUntilNavigation[]
@@ -855,6 +909,10 @@ namespace webCrawler
                 {
                     error_ids.Add(Tuple.Create(id, ex.ToString()));
                     continue;
+                }
+                finally
+                {
+                    await puppeteer_page.CloseAsync();
                 }
             }
             parsingPrdDetail(html_node);
@@ -1271,11 +1329,32 @@ namespace webCrawler
             }
             dg_result.ItemsSource = result_view_list;
         }
+        // MyDB List 상품 재수집하기
+        private void BtnReCollection_Click(object sender, RoutedEventArgs e)
+        {
+            int chk_count = 0;
+            List<string> detail_urls = new List<string>();
+            html_node = new List<string>();
+            success_ids = new List<string>();
+            error_ids = new List<Tuple<string, string>>();
+
+            foreach (ViewModel.MyDBViewModel row in myDBView_list)
+            {
+                if (row.IsSelected)
+                {
+                    chk_count++;
+                    detail_urls.Add(row.Id);
+                }
+            }
+            getDetailHtml(detail_urls);
+            getMyDB();
+        }
+
         // 시스템이 종료될 때 puppeteer도 함께 종료시킴.
         private async void Window_Closed(object sender, EventArgs e)
         {
             if (!puppeteer_page.IsClosed) await puppeteer_page.CloseAsync();
-            if (!browser.IsDisposed) browser.Dispose();
+            if (!pup_browser.IsClosed) pup_browser.Dispose();
         }
     }
 }
