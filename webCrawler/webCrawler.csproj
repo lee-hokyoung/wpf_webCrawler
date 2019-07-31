@@ -194,6 +194,8 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Contoller\ExcelDownLoad.cs" />
+    <Compile Include="Contoller\ParseHtml.cs" />
     <Compile Include="DataGridViewModel.cs" />
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="Entry.cs" />

@@ -7,18 +7,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
-using NsExcel = Microsoft.Office.Interop.Excel;
 
 namespace webCrawler
 {
@@ -364,20 +359,22 @@ namespace webCrawler
         ArrayList db_list = null;
         List<string> p_id_list = new List<string>();
         // DB에 저장되어 있는 리스트 불러오기 -> db_list에 저장(Prd_Store 클래스)
-
+        
+        // 상품정보 파싱
         private void parsingPrdDetail(List<string> html_node)
         {
             HtmlDocument doc = null, doc_img = null;
-            HtmlNodeCollection node_id = null, img_wrap = null, imgs = null, price = null, promo = null, opts = null, stock = null, attr = null, additional_image = null;
+            HtmlNodeCollection node_id = null, img_wrap = null, imgs = null, price = null, promo = null, opts = null, stock = null, attr = null, additional_image = null, opts_with_img = null;
             string[] strImg = null;
 
-            StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_price, prd_promo, prd_stock, detail_img, " +
+            StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_price, prd_promo, prd_stock, prd_opt_imgs, detail_img, " +
                 "opt_1, opt_val_1, opt_2, opt_val_2, opt_3, opt_val_3, prd_attr, add_img_1, add_img_2, add_img_3, add_img_4, updated_date) VALUES ");
             string sql_id = "", sql_prd_price = "", sql_prd_promo = "", sql_prd_stock = "", sql_detail_img = "";
             string sql_opt_1 = "", sql_opt_val_1 = "", sql_opt_2 = "", sql_opt_val_2 = "", sql_opt_3 = "", sql_opt_val_3 = "", sql_prd_attr = "",
-                sql_add_img_1 = "", sql_add_img_2 ="", sql_add_img_3 = "", sql_add_img_4 = "";
+                sql_add_img_1 = "", sql_add_img_2 = "", sql_add_img_3 = "", sql_add_img_4 = "", sql_opt_imgs = "";
             List<string> update_rows = new List<string>();
             List<string> failed_codes = new List<string>();
+            List<string> opt_imgs = new List<string>();
             MySqlConnection conn = null;
 
             try
@@ -387,7 +384,8 @@ namespace webCrawler
 
                 foreach (var node in html_node)
                 {
-                    try {
+                    try
+                    {
                         if (node == null)
                             continue;
                         // 상품 속성 : prd_attr
@@ -395,7 +393,7 @@ namespace webCrawler
                         doc.LoadHtml(node);
 
                         node_id = doc.DocumentNode.SelectNodes("//div[@id='LineZing']");
-                        if(node_id != null)
+                        if (node_id != null)
                         {
                             sql_id = node_id[0].Attributes["itemid"].Value;
                         }
@@ -437,11 +435,11 @@ namespace webCrawler
                         else
                         {
                             promo = doc.DocumentNode.SelectNodes("//em[@id='J_PromoPriceNum']");
-                            if(promo != null) sql_prd_promo = promo[0].InnerText;
+                            if (promo != null) sql_prd_promo = promo[0].InnerText;
                         }
                         // 상품 옵션
                         opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-sale-prop')]");
-                        if(opts == null)
+                        if (opts == null)
                         {
                             opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'J_Prop_measurement')]");
                         }
@@ -476,6 +474,23 @@ namespace webCrawler
                                 }
                             }
                         }
+                        // 상품 옵션 테이블 한 줄에 3줄 나오는 템플릿 만들기
+                        opts_with_img = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-img-prop')]/dd/ul/li/a");
+                        if (opts_with_img != null)
+                        {
+                            int back_img_start = 0, back_img_end = 0;
+                            string opt_back_url = "";
+                            opt_imgs = new List<string>();
+                            foreach(var item in opts_with_img)
+                            {
+                                back_img_start = item.Attributes["style"].Value.IndexOf("url(");
+                                back_img_end = item.Attributes["style"].Value.IndexOf(".jpg_");
+                                opt_back_url = item.Attributes["style"].Value.Substring(back_img_start + 4, (back_img_end - back_img_start));
+                                opt_imgs.Add(opt_back_url + "^^" + item.ChildNodes["span"].InnerText);
+                            }
+                        }
+                        if (opt_imgs.Count > 0) sql_opt_imgs = string.Join(",", opt_imgs);
+                        else sql_opt_imgs = "";
 
                         // 상품 재고 : J_SpanStock
                         stock = doc.DocumentNode.SelectNodes("//em[@id='J_EmStock']");
@@ -487,7 +502,7 @@ namespace webCrawler
                         }
                         // 상품 세부 정보
                         attr = doc.DocumentNode.SelectNodes("//ul[@id='J_AttrUL']/li");
-                        if(attr == null)
+                        if (attr == null)
                         {
                             attr = doc.DocumentNode.SelectNodes("//div[@id='attributes']/ul/li");
                         }
@@ -531,7 +546,7 @@ namespace webCrawler
                                                 sql_add_img_2 = item.ChildNodes["a"].InnerHtml;
                                             else if (item.ChildNodes[1].Name == "a")
                                                 sql_add_img_2 = item.ChildNodes["a"].InnerHtml;
-                                            else if(item.ChildNodes[1].Name == "div")
+                                            else if (item.ChildNodes[1].Name == "div")
                                                 sql_add_img_2 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
                                             break;
                                         case 3:
@@ -539,7 +554,7 @@ namespace webCrawler
                                                 sql_add_img_3 = item.ChildNodes["a"].InnerHtml;
                                             else if (item.ChildNodes[1].Name == "a")
                                                 sql_add_img_3 = item.ChildNodes["a"].InnerHtml;
-                                            else if(item.ChildNodes[1].Name == "div")
+                                            else if (item.ChildNodes[1].Name == "div")
                                                 sql_add_img_3 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
                                             break;
                                         case 4:
@@ -554,11 +569,12 @@ namespace webCrawler
                                 }
                             }
                         }
-                        update_rows.Add(string.Format("('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}','{12}','{13}','{14}','{15}','{16}')",
+                        update_rows.Add(string.Format("('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}','{12}','{13}','{14}','{15}','{16}','{17}')",
                             MySqlHelper.EscapeString(sql_id),
                             MySqlHelper.EscapeString(sql_prd_price),
                             MySqlHelper.EscapeString(sql_prd_promo),
                             MySqlHelper.EscapeString(sql_prd_stock),
+                            MySqlHelper.EscapeString(sql_opt_imgs),
                             MySqlHelper.EscapeString(sql_detail_img),
                             MySqlHelper.EscapeString(sql_opt_1),
                             MySqlHelper.EscapeString(sql_opt_val_1),
@@ -575,19 +591,21 @@ namespace webCrawler
                             )
                         );
                     }
-                    catch (Exception e) {
+                    catch (Exception e)
+                    {
                         continue;
                     }
                 }
                 conn.Open();
-                if(update_rows.Count > 0)
+                if (update_rows.Count > 0)
                 {
                     // tmp 테이블이 있는지 확인
                     string isExist_tmp = "SELECT count(*) as cnt FROM information_schema.tables WHERE table_name = 'tmp' ; ";
                     MySqlCommand count = new MySqlCommand(isExist_tmp, conn);
                     int tmp_count = Convert.ToInt32(count.ExecuteScalar());
-                    if(tmp_count > 0)
+                    if (tmp_count > 0)
                     {
+                        // tmp 테이블이 있을 경우 drop table
                         MySqlCommand dropTmp = new MySqlCommand("drop table tmp; ", conn);
                         dropTmp.ExecuteNonQuery();
                     }
@@ -598,6 +616,7 @@ namespace webCrawler
                             "prd_price VARCHAR(50), " +
                             "prd_promo VARCHAR(50), " +
                             "prd_stock VARCHAR(45), " +
+                            "prd_opt_imgs VARCHAR(8000), " +
                             "detail_img VARCHAR(8000), " +
                             "opt_1 VARCHAR(45), " +
                             "opt_val_1 VARCHAR(500), " +
@@ -630,7 +649,7 @@ namespace webCrawler
                             "UPDATE tmp T INNER JOIN taobao_goods TB ON T.id = TB.id " +
                             "SET TB.prd_price = T.prd_price, TB.prd_promo = T.prd_promo, TB.prd_stock = T.prd_stock, TB.detail_yn = '1', TB.detail_img = T.detail_img, " +
                             "TB.opt_1 = T.opt_1, TB.opt_val_1 = T.opt_val_1, TB.opt_2 = T.opt_2, TB.opt_val_2 = T.opt_val_2, TB.opt_3 = T.opt_3, TB.opt_val_3 = T.opt_val_3, TB.prd_attr = T.prd_attr, " +
-                           "TB.add_img_1 = T.add_img_1, TB.add_img_2 = T.add_img_2, TB.add_img_3 = T.add_img_3, TB.add_img_4 = T.add_img_4, " +
+                           "TB.add_img_1 = T.add_img_1, TB.add_img_2 = T.add_img_2, TB.add_img_3 = T.add_img_3, TB.add_img_4 = T.add_img_4, TB.prd_opt_imgs = T.prd_opt_imgs, " +
                             "TB.updated_date = T.updated_date ; " +
                             "DROP TABLE tmp;",
                             DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
@@ -1050,7 +1069,7 @@ namespace webCrawler
                         reader["prd_name"].ToString(), reader["prd_attr"].ToString(),reader["detail_yn"].ToString(), 
                         reader["prd_price"].ToString(), reader["prd_promo"].ToString(),
                         reader["opt_1"].ToString(), reader["opt_val_1"].ToString(), reader["opt_2"].ToString(), reader["opt_val_2"].ToString(), reader["opt_3"].ToString(), reader["opt_val_3"].ToString(),
-                        reader["prd_stock"].ToString(), reader["detail_img"].ToString(), 
+                        reader["prd_opt_imgs"].ToString(), reader["prd_stock"].ToString(), reader["detail_img"].ToString(), 
                         reader["add_img_1"].ToString(), reader["add_img_2"].ToString(), reader["add_img_3"].ToString(), reader["add_img_4"].ToString(),
                         reader["created_date"].ToString(), reader["updated_date"].ToString(), reader["user_id"].ToString()
                         )
@@ -1262,90 +1281,12 @@ namespace webCrawler
         // 엑셀다운로드
         private void BtnDownloadExcel_Click(object sender, RoutedEventArgs e)
         {
-            var excel = new NsExcel.Application();
-
-            excel.Visible = false;
-            excel.DisplayAlerts = false;
-
-            var excelWorkBook = excel.Workbooks.Add(Type.Missing);
-            var excelSheet = (NsExcel.Worksheet)excelWorkBook.ActiveSheet;
-            try
-            {
-                int r = dgMyDB.Items.Count;
-                //int c = dgMyDB.Columns.Count;
-                int c = 21;
-                var data = new object[r, c];
-
-                // 헤더 설정
-                data[0, 0] = "순서";
-                data[0, 1] = "상품코드";
-                data[0, 2] = "상품명";
-                data[0, 3] = "공급가격";
-                data[0, 4] = "판매가격";
-                data[0, 5] = "시중가격";
-                data[0, 6] = "옵션명1";
-                data[0, 7] = "옵션항목1";
-                data[0, 8] = "옵션명2";
-                data[0, 9] = "옵션항목2";
-                data[0, 10] = "옵션명3";
-                data[0, 11] = "옵션항목3";
-                data[0, 12] = "상품이미지";
-                data[0, 13] = "상품상세설명";
-                data[0, 14] = "신상세설명";
-                data[0, 15] = "상품재고";
-                data[0, 16] = "추가이미지1";
-                data[0, 17] = "추가이미지2";
-                data[0, 18] = "추가이미지3";
-                data[0, 19] = "추가이미지4";
-                data[0, 20] = "상품 URL";
-
-
-                int i = 0;
-                
-                foreach (ViewModel.MyDBViewModel row in myDBView_list)
-                {
-                    ++i;
-                    data[i, 0] = row.Num;
-                    data[i, 1] = row.Id;
-                    data[i, 2] = row.Prd_name;
-                    data[i, 3] = row.Prd_price;
-                    //data[i, 4] = (float.Parse(row.Prd_price) * float.Parse(txtExChange.Text)).ToString();
-                    data[i, 4] = row.Prd_price;
-                    data[i, 5] = row.Prd_promo;
-                    data[i, 6] = row.Opt_1;
-                    data[i, 7] = row.Opt_val_1;
-                    data[i, 8] = row.Opt_2;
-                    data[i, 9] = row.Opt_val_2;
-                    data[i, 10] = row.Opt_3;
-                    data[i, 11] = row.Opt_val_3;
-                    data[i, 12] = row.Prd_img.ToString();
-                    data[i, 13] = row.Detail_img;
-                    data[i, 14] = row.Detail_img;
-                    data[i, 15] = row.Prd_stock;
-                    data[i, 16] = row.Add_img_1;
-                    data[i, 17] = row.Add_img_2;
-                    data[i, 18] = row.Add_img_3;
-                    data[i, 19] = row.Add_img_4;
-                    data[i, 20] = "https://detail.tmall.com/item.htm?id=" + row.Id;
-                }
-                excelSheet.Range[excelSheet.Cells[1, 1], excelSheet.Cells[r, c]].Value2 = data;
-                excel.Visible = true;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "generateExcel");
-            }
-            finally
-            {
-                Marshal.ReleaseComObject(excelSheet);
-                Marshal.ReleaseComObject(excelWorkBook);
-                Marshal.ReleaseComObject(excel);
-            }
+            webCrawler.Contoller.ExcelDownLoad.fnExcelDownLoad(dgMyDB, myDBView_list);
         }
 
         #endregion
         // 수집결과 출력
-        private void fnGenResult()
+        public void fnGenResult()
         {
             dg_result.ItemsSource = null;
             foreach(var item in error_ids)

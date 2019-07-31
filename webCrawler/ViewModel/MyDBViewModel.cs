@@ -25,6 +25,7 @@ namespace webCrawler.ViewModel
         private string _opt_val_2;
         private string _opt_3;
         private string _opt_val_3;
+        private string _opt_imgs;                 // 옵션 이미지 url ^^ 옵션명 리스트
         private string _prd_stock;                // 상품 재고
         private string _detail_img;               // 상품 상세 이미지
         private string _add_img_1;              // 추가이미지1
@@ -37,8 +38,8 @@ namespace webCrawler.ViewModel
         public MyDBViewModel() { }
         public MyDBViewModel(bool isSelected, int num, string id, BitmapImage prd_img, string prd_category, string prd_name,
             string prd_attr, string detail_yn, string prd_price, string prd_promo,
-            string opt_1, string opt_val_1, string opt_2, string opt_val_2, string opt_3, string opt_val_3, string prd_stock, string detail_img,
-            string add_img_1, string add_img_2, string add_img_3, string add_img_4, 
+            string opt_1, string opt_val_1, string opt_2, string opt_val_2, string opt_3, string opt_val_3, string opt_imgs, 
+            string prd_stock, string detail_img, string add_img_1, string add_img_2, string add_img_3, string add_img_4, 
             string created_date, string updated_date, string user_id)
         {
             _isSelected = isSelected;
@@ -58,6 +59,7 @@ namespace webCrawler.ViewModel
             _opt_val_2 = opt_val_2;
             _opt_3 = opt_3;
             _opt_val_3 = opt_val_3;
+            _opt_imgs = opt_imgs;
             _prd_stock = prd_stock;
             _detail_img = detail_img;
             _add_img_1 = add_img_1;
@@ -156,6 +158,11 @@ namespace webCrawler.ViewModel
         {
             get { return _opt_val_3; }
             set { _opt_val_3 = value; }
+        }
+        public string Opt_imgs
+        {
+            get { return _opt_imgs; }
+            set { _opt_imgs = value; }
         }
         public string Prd_stock
         {
