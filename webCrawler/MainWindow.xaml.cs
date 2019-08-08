@@ -295,7 +295,6 @@ namespace webCrawler
                     HtmlNodeCollection img = item.DocumentNode.SelectNodes("//img[contains(@class, 'J_ItemPic')]"); // 2-2. nodes에 있는 상품의 img 태그
 
                     nid = pic[0].Attributes["data-nid"].Value;  // taobao 상품코드
-
                     if (id_list.IndexOf(nid) == -1)
                     {
                         // 기존에 저장되어 있는 DB 값에 id 값이 있으면 수집된 정보라는 것을 표시
@@ -385,6 +384,9 @@ namespace webCrawler
 
                 foreach (var node in html_node)
                 {
+                    sql_id = ""; sql_prd_price = ""; sql_prd_promo = ""; sql_prd_stock = ""; sql_detail_img = ""; sql_prd_brand = "";
+                    sql_opt_1 = ""; sql_opt_val_1 = ""; sql_opt_2 = ""; sql_opt_val_2 = ""; sql_opt_3 = ""; sql_opt_val_3 = ""; sql_prd_attr = "";
+                    sql_add_img_1 = ""; sql_add_img_2 = ""; sql_add_img_3 = ""; sql_add_img_4 = ""; sql_opt_imgs = "";
                     try
                     {
                         if (node == null)
@@ -477,6 +479,10 @@ namespace webCrawler
                         }
                         // 상품 옵션 테이블 한 줄에 3줄 나오는 템플릿 만들기
                         opts_with_img = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-img-prop')]/dd/ul/li/a");
+                        if(opts_with_img == null)
+                        {
+                            opts_with_img = doc.DocumentNode.SelectNodes("//ul[contains(@class, 'tb-img')]/li/a");
+                        }
                         if (opts_with_img != null)
                         {
                             int back_img_start = 0, back_img_end = 0;
