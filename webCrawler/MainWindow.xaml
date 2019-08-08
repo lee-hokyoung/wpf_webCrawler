@@ -21,6 +21,7 @@
             <Button Name="btnPrev" Canvas.Left="20" Canvas.Top="4" Width="60" Height="20" Click="BtnPrev_Click">Main 화면</Button>
             <Button Name="btnNext" Canvas.Left="90" Canvas.Top="4" Width="60" Height="20" Click="BtnNext_Click">DB List</Button>
             <Button Name="btnCtrlDelPrd" Canvas.Left="160" Canvas.Top="4" Width="80" Height="20" Click="BtnCtrlDelPrd_Click">제외상품관리</Button>
+            <Button Name="btnConfig" Canvas.Left="250" Canvas.Top="4" Width="80" Height="20" Click="BtnConfig_Click">환경설정</Button>
         </Canvas>
         <!--헤더부분 끝-->
 
@@ -68,8 +69,19 @@
                 </DataGrid>
                 <Canvas Grid.Row="1" Grid.Column="0">
                     <Button Name="btnParsor" Canvas.Top="10" Canvas.Left="10" Width="100" Height="40" Click="btnParsor_Click">상품가져오기</Button>
-                    <Button Name="btnStoreDB" Canvas.Top="10" Canvas.Left="120" Width="100" Height="40" Click="btnStoreDB_Click">DB 저장</Button>
-                    <Button Name="btnGetProductInfo" Canvas.Top="10" Canvas.Left="230" Width="100" Height="40" Click="btnGetProductInfo_Click">상세정보 수집</Button>
+                    <TextBlock Canvas.Top="10" Canvas.Left="120" Height="20" Width="100" Background="LightSlateGray" TextAlignment="Center" VerticalAlignment="Center">카테고리선택</TextBlock>
+                    <ComboBox Name="cbCategory" Canvas.Top="30" Canvas.Left="120" Width="100" VerticalContentAlignment="Center" >
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="{Binding Cate_name}" Tag="{Binding Id}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Button Name="btnStoreDB" Canvas.Top="10" Canvas.Left="230" Width="100" Height="40" Click="btnStoreDB_Click">DB 저장</Button>
+                    <Button Name="btnGetProductInfo" Canvas.Top="10" Canvas.Left="340" Width="100" Height="40" Click="btnGetProductInfo_Click">상세정보 수집</Button>
+
                     <!--카테고리 이동 버튼 모음-->
                     <Canvas Name="cnv_category" Canvas.Top="60" Canvas.Left="10" Width="800" Height="100">
                         <Label Canvas.Top="0" Canvas.Left="5">카테고리 이동 버튼 (로그인 후 사용해 주세요)</Label>
@@ -113,10 +125,28 @@
         <DockPanel Name="myDb_doc" Grid.Row="1" Visibility="Visible">
             <Grid Name="mydb_grid">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="40"></RowDefinition>
                     <RowDefinition Height="5*"></RowDefinition>
                     <RowDefinition Height="1*"></RowDefinition>
                 </Grid.RowDefinitions>
-                <DataGrid Name="dgMyDB" Grid.Row="0" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsPanel="{Binding Mode=OneWay, Path=myDBView_list}">
+                <Canvas Grid.Row="0">
+                    <Label Canvas.Left="10" Canvas.Top="5" Width="90" Height="30" VerticalContentAlignment="Center" Content="카테고리선택" Background="LightGray" BorderBrush="DarkGray" BorderThickness="1"></Label>
+                    <ComboBox Name="cbDbListCategory" Canvas.Top="5" Canvas.Left="100" Width="100" Height="30" VerticalContentAlignment="Center">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Vertical">
+                                    <TextBlock Text="{Binding Cate_name}" Tag="{Binding Id}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <Label Canvas.Left="210" Canvas.Top="5" Height="30" VerticalContentAlignment="Center" Content="생성일 선택" Background="LightGray" BorderBrush="DarkGray" BorderThickness="1"></Label>
+                    <DatePicker Name="dpCreate_date" Canvas.Left="286" Canvas.Top="5" Height="30" Width="100" HorizontalAlignment="Center" VerticalContentAlignment="Center"></DatePicker>
+                    <Label Canvas.Left="395" Canvas.Top="5" Height="30" VerticalContentAlignment="Center" Content="수정일 선택" Background="LightGray" BorderBrush="DarkGray" BorderThickness="1"></Label>
+                    <DatePicker Name="dpUpdate_date"  Canvas.Left="471" Canvas.Top="5" Height="30" Width="100" HorizontalAlignment="Center" VerticalContentAlignment="Center"></DatePicker>
+                    <Button x:Name="btnGetMyDB" Canvas.Top="5" Canvas.Left="580" Width="50" Height="30" Click="BtnGetMyDB_Click">조회</Button>
+                </Canvas>
+                <DataGrid Name="dgMyDB" Grid.Row="1" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsPanel="{Binding Mode=OneWay, Path=myDBView_list}">
                     <DataGrid.Columns>
                         <DataGridTemplateColumn>
                             <DataGridTemplateColumn.Header>
@@ -156,7 +186,7 @@
                         <DataGridTextColumn Header="수정일" Binding="{Binding Path=Updated_date}" IsReadOnly="True"/>
                     </DataGrid.Columns>
                 </DataGrid>
-                <Canvas Grid.Row="1">
+                <Canvas Grid.Row="2">
                     <Button Name="btnDownloadExcel" Canvas.Top="10" Canvas.Left="10" Width="80" Height="40" Content="엑셀&#x0a;다운로드" Click="BtnDownloadExcel_Click"></Button>
                     <Button Name="btnDelProduct" Canvas.Top="10" Canvas.Left="100" Width="80" Height="40" Content="수집제외" Click="BtnDelProduct_Click"></Button>
                     <Button Name="btnReCollection" Canvas.Top="10" Canvas.Left="190" Width="80" Height="40" Content="상품재수집" Click="BtnReCollection_Click"></Button>
@@ -202,6 +232,50 @@
             </Grid>
         </DockPanel>
         <!--제외상품관리 부분 끝-->
+
+        <!--설정화면-->
+        <DockPanel Name="doc_config" Grid.Row="1" Visibility="Collapsed">
+            <Grid Name="grdConfig">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="1*"></RowDefinition>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                    <ColumnDefinition Width="1*"></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <Grid Grid.Row="0" Grid.Column="0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="30px"></RowDefinition>
+                        <RowDefinition Height="1*"></RowDefinition>
+                        <RowDefinition Height="2*"></RowDefinition>
+                    </Grid.RowDefinitions>
+                    <Label Grid.Row="0" HorizontalContentAlignment="Center" Background="Beige" BorderBrush="LightGray" BorderThickness="1">카테고리 설정</Label>
+                    <ListView x:Name="ListViewConfigCategory" Grid.Row="1" ItemsSource="{Binding Mode=OneWay,  Path=dbConfigCategory}" MouseDoubleClick="ListViewConfigCategory_MouseDoubleClick">
+                        <ListView.View>
+                            <GridView AllowsColumnReorder="True">
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=Num}" Header="#" Width="40"></GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=Cate_name}" Header="카테고리"></GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=Cate_desc}" Header="설명"></GridViewColumn>
+                                <GridViewColumn DisplayMemberBinding="{Binding Path=Id}" Width="0"></GridViewColumn>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <Canvas Grid.Row="2">
+                        <Label Canvas.Top="10" Canvas.Left="10" Height="30" Width="80" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">카테고리명 :</Label>
+                        <TextBox x:Name="txtCategoryName" Canvas.Top="10" Canvas.Left="100" Height="30" Width="280"></TextBox>
+                        <Label Canvas.Top="50" Canvas.Left="10" Height="30" Width="80" HorizontalContentAlignment="Right" VerticalContentAlignment="Center">설명 :</Label>
+                        <TextBox x:Name="txtCategoryDesc" Canvas.Top="50" Canvas.Left="100" Height="60" Width="280"></TextBox>
+                        <TextBox x:Name="txtCategoryId" Canvas.Top="80" Canvas.Left="10" Height="30" Width="80" Visibility="Collapsed"></TextBox>
+                        <Button x:Name="btnCategoryAdd" Canvas.Top="120" Canvas.Left="100" Width="50" Height="30" Click="BtnCategoryAdd_Click">추가</Button>
+                        <Button x:Name="btnCategoryUpdate" Canvas.Top="120" Canvas.Left="160" Width="50" Height="30" Click="BtnCategoryUpdate_Click">수정</Button>
+                        <Button x:Name="btnCategoryDelete" Canvas.Top="120" Canvas.Left="220" Width="50" Height="30" Click="BtnCategoryDelete_Click">삭제</Button>
+                    </Canvas>
+                </Grid>
+            </Grid>
+        </DockPanel>
+        <!--설정화면 끝-->
+
         <DockPanel Name="doc_opacity" Grid.Row="1" Visibility="Collapsed" Opacity=".5" Background="gray"></DockPanel>
         <!--상태표시 도커-->
         <DockPanel Name="doc_status" Grid.Row="1" Visibility="Collapsed">

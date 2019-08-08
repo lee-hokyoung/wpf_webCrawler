@@ -16,7 +16,7 @@ namespace webCrawler.Contoller
         {
             var excel = new NsExcel.Application();
             excel.Visible = false;
-            excel.DisplayAlerts = false;
+            //excel.DisplayAlerts = false;
             var excelWorkBook = excel.Workbooks.Add(Type.Missing);
             var excelSheet = (NsExcel.Worksheet)excelWorkBook.ActiveSheet;
             try
@@ -170,7 +170,11 @@ namespace webCrawler.Contoller
                         data[i, 8] = row.Prd_promo;
                         data[i, 9] = row.Prd_promo;
                         data[i, 10] = row.Prd_stock;
-                        data[i, 11] = row.Prd_price;
+                        data[i, 11] = "과세";
+                        data[i, 13] = row.Prd_brand;
+                        data[i, 14] = "중국";
+                        data[i, 15] = "전국";
+                        data[i, 17] = "판매중";
 
                         data[i, 18] = row.Opt_1;
                         data[i, 19] = row.Opt_val_1;
@@ -181,15 +185,18 @@ namespace webCrawler.Contoller
 
                         data[i, 24] = row.Prd_img.ToString();
 
-                        html += "<div>";
-                        foreach (var item in row.Opt_imgs.Split(','))
+                        if(row.Opt_imgs != "")
                         {
-                            html += "<div style='max-width:33%; display: inline-block; padding: 1rem;'>";
-                            html += "<img src='https:" + item.Split(new string[] { "^^"}, StringSplitOptions.None)[0] +  "' style='width:100%'>";
-                            html += "<p>" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[1] + "</p>";
+                            html += "<div>";
+                            foreach (var item in row.Opt_imgs.Split(','))
+                            {
+                                html += "<div style='max-width:33%; display: inline-block; padding: 1rem;'>";
+                                html += "<img src='https:" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[0] + "' style='width:100%'>";
+                                if(item.Split(new string[] { "^^" }, StringSplitOptions.None).Length > 1) html += "<p>" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[1] + "</p>";
+                                html += "</div>";
+                            }
                             html += "</div>";
                         }
-                        html += "</div>";
 
                         data[i, 28] = html + row.Detail_img;       // 옵션이미지 태그 + 상세페이지 태그
                         data[i, 29] = row.Detail_img;

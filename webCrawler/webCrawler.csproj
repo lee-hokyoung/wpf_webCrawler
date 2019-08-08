@@ -194,6 +194,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Contoller\Category.cs" />
     <Compile Include="Contoller\ExcelDownLoad.cs" />
     <Compile Include="Contoller\ParseHtml.cs" />
     <Compile Include="DataGridViewModel.cs" />
@@ -209,6 +210,7 @@
     </Compile>
     <Compile Include="Settings.cs" />
     <Compile Include="ViewModelBase.cs" />
+    <Compile Include="ViewModel\CategoryViewModel.cs" />
     <Compile Include="ViewModel\delProductViewModel.cs" />
     <Compile Include="ViewModel\MyDBViewModel.cs" />
     <Compile Include="ViewModel\ProductViewModel.cs" />
