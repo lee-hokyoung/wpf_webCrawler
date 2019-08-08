@@ -478,7 +478,6 @@ namespace webCrawler
                             }
                         }
                         // 상품 옵션 테이블 한 줄에 3줄 나오는 템플릿 만들기
-
                         opts_with_img = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-img-prop')]/dd/ul/li/a");
                         if(opts_with_img == null)
                         {

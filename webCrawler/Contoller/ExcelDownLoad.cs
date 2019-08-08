@@ -25,7 +25,7 @@ namespace webCrawler.Contoller
 
                 int r = myDBView_list.Count(n => n.IsSelected == true) + 1;
                 //int c = dgMyDB.Columns.Count;
-                int c = 126;
+                int c = 127;
                 var data = new object[r, c];
 
                 // 헤더 설정
@@ -155,6 +155,7 @@ namespace webCrawler.Contoller
                 data[0, 123] = "하프클럽 가로배너 이미지 GS / 이지웰 모바일 이미지 B쇼핑 MC이미지";
                 data[0, 124] = "품질표시 TAG";
                 data[0, 125] = "무게";
+                data[0, 126] = "원본url";
 
                 int i = 0;
                 string html = "";
@@ -190,9 +191,9 @@ namespace webCrawler.Contoller
                             html += "<div>";
                             foreach (var item in row.Opt_imgs.Split(','))
                             {
-                                html += "<div style='max-width:33%; display: inline-block; padding: 1rem;'>";
-                                html += "<img src='https:" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[0] + "' style='width:100%'>";
-                                if(item.Split(new string[] { "^^" }, StringSplitOptions.None).Length > 1) html += "<p>" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[1] + "</p>";
+                                html += "<div style='max-width:31%; display: inline-block; padding: .5rem;'>";
+                                html += "<img src='https:" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[0] + "' style='width:100%;'>";
+                                if(item.Split(new string[] { "^^" }, StringSplitOptions.None).Length > 1) html += "<p style='margin-top:.5rem; text-align:center; font-weight:bold;'>" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[1] + "</p>";
                                 html += "</div>";
                             }
                             html += "</div>";
@@ -205,8 +206,7 @@ namespace webCrawler.Contoller
                         data[i, 45] = row.Add_img_2;
                         data[i, 46] = row.Add_img_3;
                         data[i, 47] = row.Add_img_4;
-
-                        //data[i, 20] = "https://detail.tmall.com/item.htm?id=" + row.Id;
+                        data[i, 126] = "https://detail.tmall.com/item.htm?id=" + row.Id;
                     }
                 }
                 excelSheet.Range[excelSheet.Cells[1, 1], excelSheet.Cells[r, c]].Value2 = data;
