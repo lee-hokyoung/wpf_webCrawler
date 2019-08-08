@@ -1,3 +1,5 @@
+drop table taobao_goods;
+
 CREATE TABLE `taobao_goods` (
   `id` VARCHAR(20) NOT NULL,
   `prd_img` VARCHAR(200) NULL DEFAULT NULL,
@@ -8,6 +10,7 @@ CREATE TABLE `taobao_goods` (
   `prd_price` VARCHAR(50) NULL DEFAULT NULL,
   `prd_promo` VARCHAR(50) NULL DEFAULT NULL,
   `prd_opt` VARCHAR(800) NULL DEFAULT NULL,
+  `prd_brand` VARCHAR(100) NULL DEFAULT NULL,
   `opt_1` VARCHAR(45) NULL DEFAULT NULL,
   `opt_val_1` VARCHAR(500) NULL DEFAULT NULL,
   `opt_2` VARCHAR(45) NULL DEFAULT NULL,
@@ -22,8 +25,17 @@ CREATE TABLE `taobao_goods` (
   `add_img_2` VARCHAR(200) NULL DEFAULT NULL,
   `add_img_3` VARCHAR(200) NULL DEFAULT NULL,
   `add_img_4` VARCHAR(200) NULL DEFAULT NULL,
+  `excel_down_yn` VARCHAR(1) NULL DEFAULT NULL,	
   `created_date` VARCHAR(45) NULL DEFAULT NULL,
   `updated_date` VARCHAR(45) NULL DEFAULT NULL,
   `user_id` VARCHAR(45) NULL DEFAULT NULL
 );
-drop table taobao_goods;
+
+
+select * from taobao_goods
+WHERE substr(created_date, 1, 10) = '2019-08-01';
+
+select * from taobao_goods g
+LEFT OUTER JOIN taobao_category c
+ON g.prd_category = c.Id
+WHERE prd_category = '1';

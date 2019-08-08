@@ -18,6 +18,7 @@ namespace webCrawler.ViewModel
         private string _prd_price;                 // 공급가격
         //private string _prd_price_won;         // 판매가격
         private string _prd_promo;               // 시중가격
+        private string _prd_brand;                  // 제조사 (브랜드)
         //private string _prd_opt;                   // 상품 옵션
         private string _opt_1;
         private string _opt_val_1;
@@ -37,7 +38,7 @@ namespace webCrawler.ViewModel
         private string _user_id;                    // 사용자 ID
         public MyDBViewModel() { }
         public MyDBViewModel(bool isSelected, int num, string id, BitmapImage prd_img, string prd_category, string prd_name,
-            string prd_attr, string detail_yn, string prd_price, string prd_promo,
+            string prd_attr, string detail_yn, string prd_price, string prd_promo, string prd_brand,
             string opt_1, string opt_val_1, string opt_2, string opt_val_2, string opt_3, string opt_val_3, string opt_imgs, 
             string prd_stock, string detail_img, string add_img_1, string add_img_2, string add_img_3, string add_img_4, 
             string created_date, string updated_date, string user_id)
@@ -53,6 +54,7 @@ namespace webCrawler.ViewModel
             _prd_price = prd_price;
             //_prd_price_won = prd_price_won;
             _prd_promo = prd_promo;
+            _prd_brand = prd_brand;
             _opt_1 = opt_1;
             _opt_val_1 = opt_val_1;
             _opt_2 = opt_2;
@@ -128,6 +130,11 @@ namespace webCrawler.ViewModel
         {
             get { return _prd_promo; }
             set { _prd_promo = value; }
+        }
+        public string Prd_brand
+        {
+            get { return _prd_brand; }
+            set { _prd_brand = value; }
         }
         public string Opt_1
         {

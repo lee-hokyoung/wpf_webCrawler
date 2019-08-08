@@ -52,10 +52,11 @@ namespace webCrawler
             this.DataContext = new ViewModel.ProductViewModel();
             InitializeChromium();
             getDbData();
-            loginTaoBao("supereggsong", "alsdud1218!");
+            cbCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+            InitTaobao();
         }
         // puppeteer 로그인
-        private async void loginTaoBao(string id, string pwd)
+        private async void InitTaobao()
         {
             try
             {
@@ -364,13 +365,13 @@ namespace webCrawler
         private void parsingPrdDetail(List<string> html_node)
         {
             HtmlDocument doc = null, doc_img = null;
-            HtmlNodeCollection node_id = null, img_wrap = null, imgs = null, price = null, promo = null, opts = null, stock = null, attr = null, additional_image = null, opts_with_img = null;
+            HtmlNodeCollection node_id = null, img_wrap = null, imgs = null, price = null, promo = null, opts = null, stock = null, attr = null, additional_image = null, opts_with_img = null, prd_brand = null;
             string[] strImg = null;
 
-            StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_price, prd_promo, prd_stock, prd_opt_imgs, detail_img, " +
+            StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_price, prd_promo, prd_stock, prd_opt_imgs, detail_img, prd_brand, " +
                 "opt_1, opt_val_1, opt_2, opt_val_2, opt_3, opt_val_3, prd_attr, add_img_1, add_img_2, add_img_3, add_img_4, updated_date) VALUES ");
-            string sql_id = "", sql_prd_price = "", sql_prd_promo = "", sql_prd_stock = "", sql_detail_img = "";
-            string sql_opt_1 = "", sql_opt_val_1 = "", sql_opt_2 = "", sql_opt_val_2 = "", sql_opt_3 = "", sql_opt_val_3 = "", sql_prd_attr = "",
+            string sql_id = "", sql_prd_price = "", sql_prd_promo = "", sql_prd_stock = "", sql_detail_img = "", sql_prd_brand = "",
+                sql_opt_1 = "", sql_opt_val_1 = "", sql_opt_2 = "", sql_opt_val_2 = "", sql_opt_3 = "", sql_opt_val_3 = "", sql_prd_attr = "",
                 sql_add_img_1 = "", sql_add_img_2 = "", sql_add_img_3 = "", sql_add_img_4 = "", sql_opt_imgs = "";
             List<string> update_rows = new List<string>();
             List<string> failed_codes = new List<string>();
@@ -515,9 +516,14 @@ namespace webCrawler
                             }
                             sql_prd_attr = string.Join(",", attr_list);
                         }
+                        // 제조사(brand)
+                        prd_brand = doc.DocumentNode.SelectNodes("//div[@id='J_BrandAttr']/div/b");
+                        if(prd_brand != null)
+                        {
+                            sql_prd_brand = prd_brand[0].InnerText;
+                        }
                         // 상품 추가 이미지
                         additional_image = doc.DocumentNode.SelectNodes("//ul[@id='J_UlThumb']/li");
-
                         if (additional_image.Count > 0)
                         {
                             int idx = 0;
@@ -569,13 +575,15 @@ namespace webCrawler
                                 }
                             }
                         }
-                        update_rows.Add(string.Format("('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}','{12}','{13}','{14}','{15}','{16}','{17}')",
+
+                        update_rows.Add(string.Format("('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}','{12}','{13}','{14}','{15}','{16}','{17}','{18}')",
                             MySqlHelper.EscapeString(sql_id),
                             MySqlHelper.EscapeString(sql_prd_price),
                             MySqlHelper.EscapeString(sql_prd_promo),
                             MySqlHelper.EscapeString(sql_prd_stock),
                             MySqlHelper.EscapeString(sql_opt_imgs),
                             MySqlHelper.EscapeString(sql_detail_img),
+                            MySqlHelper.EscapeString(sql_prd_brand),
                             MySqlHelper.EscapeString(sql_opt_1),
                             MySqlHelper.EscapeString(sql_opt_val_1),
                             MySqlHelper.EscapeString(sql_opt_2),
@@ -618,6 +626,7 @@ namespace webCrawler
                             "prd_stock VARCHAR(45), " +
                             "prd_opt_imgs VARCHAR(8000), " +
                             "detail_img VARCHAR(8000), " +
+                            "prd_brand VARCHAR(100), " +
                             "opt_1 VARCHAR(45), " +
                             "opt_val_1 VARCHAR(500), " +
                             "opt_2 VARCHAR(45), " +
@@ -647,7 +656,7 @@ namespace webCrawler
 
                         myCmd.CommandText = string.Format(
                             "UPDATE tmp T INNER JOIN taobao_goods TB ON T.id = TB.id " +
-                            "SET TB.prd_price = T.prd_price, TB.prd_promo = T.prd_promo, TB.prd_stock = T.prd_stock, TB.detail_yn = '1', TB.detail_img = T.detail_img, " +
+                            "SET TB.prd_price = T.prd_price, TB.prd_promo = T.prd_promo, TB.prd_stock = T.prd_stock, TB.detail_yn = '1', TB.detail_img = T.detail_img, TB.prd_brand = T.prd_brand, " +
                             "TB.opt_1 = T.opt_1, TB.opt_val_1 = T.opt_val_1, TB.opt_2 = T.opt_2, TB.opt_val_2 = T.opt_val_2, TB.opt_3 = T.opt_3, TB.opt_val_3 = T.opt_val_3, TB.prd_attr = T.prd_attr, " +
                            "TB.add_img_1 = T.add_img_1, TB.add_img_2 = T.add_img_2, TB.add_img_3 = T.add_img_3, TB.add_img_4 = T.add_img_4, TB.prd_opt_imgs = T.prd_opt_imgs, " +
                             "TB.updated_date = T.updated_date ; " +
@@ -729,6 +738,14 @@ namespace webCrawler
         //  DB 저장 버튼 클릭 이벤트
         private void btnStoreDB_Click(object sender, RoutedEventArgs e)
         {
+            // 카테고리가 선택되어 있는지 확인
+            if (cbCategory.SelectedIndex == -1)
+            {
+                MessageBox.Show("카테고리를 선택해주세요.");
+                return;
+            }
+            ViewModel.CategoryViewModel category = (ViewModel.CategoryViewModel)cbCategory.SelectedItem;
+
             if (prdView_list == null) return;
             StringBuilder sINSERT = new StringBuilder("INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES ");
             StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_img, prd_name, prd_category, created_date) VALUES ");
@@ -746,7 +763,8 @@ namespace webCrawler
                                 MySqlHelper.EscapeString(row.Id),                              // 상품코드
                                 MySqlHelper.EscapeString(row.Prd_img.ToString()),   // 상품이미지
                                 MySqlHelper.EscapeString(row.Prd_name),                 // 상품명
-                                MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
+                                MySqlHelper.EscapeString(category.Id.ToString()),           // 상품카테고리
+                                //MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
                                 MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))      // 생성일
                                 )
                             );
@@ -759,7 +777,8 @@ namespace webCrawler
                                 MySqlHelper.EscapeString(row.Id),                              // 상품코드
                                 MySqlHelper.EscapeString(row.Prd_img.ToString()),   // 상품이미지
                                 MySqlHelper.EscapeString(row.Prd_name),                 // 상품명
-                                MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
+                                MySqlHelper.EscapeString(category.Id.ToString()),           // 상품카테고리
+                                //MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
                                 MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))      // 생성일
                                 )
                             );
@@ -987,28 +1006,41 @@ namespace webCrawler
                 p.IsSelected = false;
             }
         }
-
+        // Main 화면 탭
         private void BtnPrev_Click(object sender, RoutedEventArgs e)
         {
             main_doc.Visibility = Visibility.Visible;
             myDb_doc.Visibility = Visibility.Collapsed;
             doc_CtrlDelPrd.Visibility = Visibility.Collapsed;
+            doc_config.Visibility = Visibility.Collapsed;
+            cbCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
         }
-
+        // DB List 탭 클릭
         private void BtnNext_Click(object sender, RoutedEventArgs e)
         {
             main_doc.Visibility = Visibility.Collapsed;
             myDb_doc.Visibility = Visibility.Visible;
             doc_CtrlDelPrd.Visibility = Visibility.Collapsed;
-            getMyDB();
+            doc_config.Visibility = Visibility.Collapsed;
+            cbDbListCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
         }
-        // 제외 상품 관리 버튼 클릭
+        // 제외 상품 관리 탭 클릭
         private void BtnCtrlDelPrd_Click(object sender, RoutedEventArgs e)
         {
             main_doc.Visibility = Visibility.Collapsed;
             myDb_doc.Visibility = Visibility.Collapsed;
             doc_CtrlDelPrd.Visibility = Visibility.Visible;
+            doc_config.Visibility = Visibility.Collapsed;
             showDelPrdList();
+        }
+        // 환경설정 탭 클릭
+        private void BtnConfig_Click(object sender, RoutedEventArgs e)
+        {
+            main_doc.Visibility = Visibility.Collapsed;
+            myDb_doc.Visibility = Visibility.Collapsed;
+            doc_CtrlDelPrd.Visibility = Visibility.Collapsed;
+            doc_config.Visibility = Visibility.Visible;
+            ListViewConfigCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
         }
         // Main 화면 이동 버튼 클릭 이벤트
         private void btn_main_Click(object sender, RoutedEventArgs e)
@@ -1043,18 +1075,32 @@ namespace webCrawler
         #region MyDB & excel download
         List<ViewModel.MyDBViewModel> myDBView_list;
         //  상품정보 읽어오기
-        private void getMyDB()
+        private void getMyDB(string cate_id)
         {
             MySqlConnection conn = null;
             try
             {
+                StringBuilder query_builder = new StringBuilder();
+                query_builder.Append(string.Format(
+                    "SELECT G.id as id, G.prd_img as prd_img , C.cate_name as prd_category, G.prd_name as prd_name, G.prd_attr as prd_attr, G.detail_yn as detail_yn, G.prd_price as prd_price, G.prd_promo as prd_promo, G.prd_brand as prd_brand, " +
+                    "G.opt_1 as opt_1, G.opt_val_1 as opt_val_1, G.opt_2 as opt_2, G.opt_val_2 as opt_val_2, G.opt_3 as opt_3, G.opt_val_3 as opt_val_3, " +
+                    "G.prd_opt_imgs as prd_opt_imgs, G.prd_stock as prd_stock, G.detail_img as detail_img, G.add_img_1 as add_img_1, G.add_img_2 as add_img_2, G.add_img_3 as add_img_3, G.add_img_4 as add_img_4, " +
+                    "G.created_date as created_date, G.updated_date as updated_date, G.user_id as user_id, " +
+                    "C.Id as cate_id " +
+                    "FROM taobao_goods G " +
+                    "LEFT OUTER JOIN taobao_category C ON G.prd_category = C.Id " +
+                    "WHERE prd_status = '1' AND prd_category = '{0}'  ", cate_id));
+                if (dpCreate_date.Text != "") query_builder.Append(string.Format("AND substr(created_date, 1, 10) = '{0}'", dpCreate_date.Text));
+                if (dpUpdate_date.Text != "") query_builder.Append(string.Format("AND substr(updated_date, 1, 10) = '{0}'", dpUpdate_date.Text));
+                query_builder.Append(";");
+
                 myDBView_list = new List<ViewModel.MyDBViewModel>();
                 conn = new MySqlConnection(strConn);
                 MySqlCommand cmd = new MySqlCommand();
                 cmd.Connection = conn;
                 conn.Open();
                 cmd.Prepare();
-                cmd.CommandText = "SELECT * FROM taobao_goods WHERE prd_status = '1'; ";
+                cmd.CommandText = query_builder.ToString();
                 MySqlDataReader reader = cmd.ExecuteReader();
                 BitmapImage bi = new BitmapImage();
                 int num = 1;
@@ -1067,7 +1113,7 @@ namespace webCrawler
                     myDBView_list.Add(new ViewModel.MyDBViewModel(
                         false, num++, reader["id"].ToString(), bi, reader["prd_category"].ToString(), 
                         reader["prd_name"].ToString(), reader["prd_attr"].ToString(),reader["detail_yn"].ToString(), 
-                        reader["prd_price"].ToString(), reader["prd_promo"].ToString(),
+                        reader["prd_price"].ToString(), reader["prd_promo"].ToString(), reader["prd_brand"].ToString(),
                         reader["opt_1"].ToString(), reader["opt_val_1"].ToString(), reader["opt_2"].ToString(), reader["opt_val_2"].ToString(), reader["opt_3"].ToString(), reader["opt_val_3"].ToString(),
                         reader["prd_opt_imgs"].ToString(), reader["prd_stock"].ToString(), reader["detail_img"].ToString(), 
                         reader["add_img_1"].ToString(), reader["add_img_2"].ToString(), reader["add_img_3"].ToString(), reader["add_img_4"].ToString(),
@@ -1138,7 +1184,8 @@ namespace webCrawler
                         myCmd.ExecuteNonQuery();
 
                         MessageBox.Show(string.Format("총 {0}개의 상품이 수집제외 됐습니다.", insert_rows.Count));
-                        getMyDB();
+                        ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)cbDbListCategory.SelectedItem;
+                        if(item != null) getMyDB(item.Id.ToString());
                     }
                 }catch(Exception ex)
                 {
@@ -1262,7 +1309,8 @@ namespace webCrawler
                         myCmd.ExecuteNonQuery();
 
                         MessageBox.Show(string.Format("총 {0}개의 상품이 수집제외에서 해제 됐습니다.", insert_rows.Count));
-                        getMyDB();
+                        ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)cbDbListCategory.SelectedItem;
+                        if(item != null) getMyDB(item.Id.ToString());
                     }
                 }
                 catch (Exception ex)
@@ -1283,7 +1331,6 @@ namespace webCrawler
         {
             webCrawler.Contoller.ExcelDownLoad.fnExcelDownLoad(dgMyDB, myDBView_list);
         }
-
         #endregion
         // 수집결과 출력
         public void fnGenResult()
@@ -1317,7 +1364,43 @@ namespace webCrawler
                 }
             }
             getDetailHtml(detail_urls);
-            getMyDB();
+            ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)cbDbListCategory.SelectedItem;
+            if(item != null) getMyDB(item.Id.ToString());
+        }
+        #region 카테고리관련 이벤트 모음
+        private void BtnCategoryAdd_Click(object sender, RoutedEventArgs e)
+        {
+            webCrawler.Contoller.Category.createCategory(txtCategoryName.Text, txtCategoryDesc.Text);
+            txtCategoryName.Text = "";  txtCategoryDesc.Text = "";
+            ListViewConfigCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+        }
+        private void BtnCategoryUpdate_Click(object sender, RoutedEventArgs e)
+        {
+            webCrawler.Contoller.Category.updateCategory(txtCategoryId.Text, txtCategoryName.Text, txtCategoryDesc.Text);
+            ListViewConfigCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+        }
+        private void BtnCategoryDelete_Click(object sender, RoutedEventArgs e)
+        {
+            webCrawler.Contoller.Category.deleteCategory(txtCategoryId.Text);
+            ListViewConfigCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+        }
+        private void ListViewConfigCategory_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            int idx = ListViewConfigCategory.SelectedIndex;
+            if(idx > -1)
+            {
+                ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)ListViewConfigCategory.SelectedItems[0];
+                txtCategoryName.Text = item.Cate_name;
+                txtCategoryDesc.Text = item.Cate_desc;
+                txtCategoryId.Text = item.Id.ToString();
+            }
+        }
+        #endregion
+
+        private void BtnGetMyDB_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)cbDbListCategory.SelectedItem;
+            if (item != null) getMyDB(item.Id.ToString());
         }
 
         // 시스템이 종료될 때 puppeteer도 함께 종료시킴.
