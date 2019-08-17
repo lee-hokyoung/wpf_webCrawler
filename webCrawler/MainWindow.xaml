@@ -141,10 +141,15 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                     <Label Canvas.Left="210" Canvas.Top="5" Height="30" VerticalContentAlignment="Center" Content="생성일 선택" Background="LightGray" BorderBrush="DarkGray" BorderThickness="1"></Label>
-                    <DatePicker Name="dpCreate_date" Canvas.Left="286" Canvas.Top="5" Height="30" Width="100" HorizontalAlignment="Center" VerticalContentAlignment="Center"></DatePicker>
-                    <Label Canvas.Left="395" Canvas.Top="5" Height="30" VerticalContentAlignment="Center" Content="수정일 선택" Background="LightGray" BorderBrush="DarkGray" BorderThickness="1"></Label>
-                    <DatePicker Name="dpUpdate_date"  Canvas.Left="471" Canvas.Top="5" Height="30" Width="100" HorizontalAlignment="Center" VerticalContentAlignment="Center"></DatePicker>
-                    <Button x:Name="btnGetMyDB" Canvas.Top="5" Canvas.Left="580" Width="50" Height="30" Click="BtnGetMyDB_Click">조회</Button>
+                    <DatePicker Name="dpCreate_date_from" Canvas.Left="286" Canvas.Top="5" Height="30" Width="100" HorizontalAlignment="Center" VerticalContentAlignment="Center"></DatePicker>
+                    <Label Canvas.Top="5" Canvas.Left="386">~</Label>
+                    <DatePicker Name="dpCreate_date_to" Canvas.Left="404" Canvas.Top="5" Height="30" Width="100" HorizontalAlignment="Center" VerticalContentAlignment="Center"></DatePicker>
+
+                    <Label Canvas.Left="521" Canvas.Top="5" Height="30" VerticalContentAlignment="Center" Content="수정일 선택" Background="LightGray" BorderBrush="DarkGray" BorderThickness="1"></Label>
+                    <DatePicker Name="dpUpdate_date_from"  Canvas.Left="597" Canvas.Top="5" Height="30" Width="100" HorizontalAlignment="Center" VerticalContentAlignment="Center"></DatePicker>
+                    <Label Canvas.Top="5" Canvas.Left="697">~</Label>
+                    <DatePicker Name="dpUpdate_date_to"  Canvas.Left="715" Canvas.Top="5" Height="30" Width="100" HorizontalAlignment="Center" VerticalContentAlignment="Center"></DatePicker>
+                    <Button x:Name="btnGetMyDB" Canvas.Top="5" Canvas.Left="815" Width="50" Height="30" Click="BtnGetMyDB_Click">조회</Button>
                 </Canvas>
                 <DataGrid Name="dgMyDB" Grid.Row="1" AutoGenerateColumns="False" VerticalAlignment="Top" ItemsPanel="{Binding Mode=OneWay, Path=myDBView_list}">
                     <DataGrid.Columns>

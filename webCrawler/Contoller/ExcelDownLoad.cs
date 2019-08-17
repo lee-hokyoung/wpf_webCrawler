@@ -200,7 +200,7 @@ namespace webCrawler.Contoller
                         }
 
                         data[i, 28] = html + row.Detail_img;       // 옵션이미지 태그 + 상세페이지 태그
-                        data[i, 29] = row.Detail_img;
+                        data[i, 29] = html + row.Detail_img;
 
                         data[i, 44] = row.Add_img_1;
                         data[i, 45] = row.Add_img_2;

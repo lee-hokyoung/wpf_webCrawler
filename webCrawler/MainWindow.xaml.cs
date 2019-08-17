@@ -444,7 +444,7 @@ namespace webCrawler
                         opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'tm-sale-prop')]");
                         if (opts == null)
                         {
-                            opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'J_Prop_measurement')]");
+                            opts = doc.DocumentNode.SelectNodes("//dl[contains(@class, 'J_Prop')]");
                         }
                         if (opts != null)
                         {
@@ -1096,8 +1096,8 @@ namespace webCrawler
                     "FROM taobao_goods G " +
                     "LEFT OUTER JOIN taobao_category C ON G.prd_category = C.Id " +
                     "WHERE prd_status = '1' AND prd_category = '{0}'  ", cate_id));
-                if (dpCreate_date.Text != "") query_builder.Append(string.Format("AND substr(created_date, 1, 10) = '{0}'", dpCreate_date.Text));
-                if (dpUpdate_date.Text != "") query_builder.Append(string.Format("AND substr(updated_date, 1, 10) = '{0}'", dpUpdate_date.Text));
+                if (dpCreate_date_from.Text != "" && dpCreate_date_to.Text != "") query_builder.Append(string.Format("AND substr(created_date, 1, 10) BETWEEN '{0}' AND '{1}' ", dpCreate_date_from.Text, dpCreate_date_to.Text ));
+                if (dpUpdate_date_from.Text != "" && dpUpdate_date_to.Text != "") query_builder.Append(string.Format("AND substr(updated_date, 1, 10) BETWEEN '{0}' AND '{1}' ", dpUpdate_date_from.Text, dpUpdate_date_to.Text ));
                 query_builder.Append(";");
 
                 myDBView_list = new List<ViewModel.MyDBViewModel>();
