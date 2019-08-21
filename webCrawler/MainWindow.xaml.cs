@@ -82,7 +82,8 @@ namespace webCrawler
                     Headless = false,
                     Args = args,
                     IgnoreHTTPSErrors = true,
-                    ExecutablePath = chrome_exe_path
+                    ExecutablePath = chrome_exe_path,
+                    Timeout = 3000
                 });
                 Dictionary<string, string> header = new Dictionary<string, string>();
                 header.Add("Referer", "https://world.taobao.com/");
@@ -409,18 +410,49 @@ namespace webCrawler
                         img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
                         if (img_wrap != null)
                         {
+                            if(img_wrap[0].ChildNodes["div"] != null)
+                            {
+
+                            }else if(img_wrap[0].ChildNodes["p"] != null)
+                            {
+
+                            }
+
                             doc_img = new HtmlDocument();
                             doc_img.LoadHtml(img_wrap[0].InnerHtml);
-                            imgs = doc_img.DocumentNode.SelectNodes("//img[@data-ks-lazyload]");
-                            if (imgs != null)
+                            var p_tags = doc_img.DocumentNode.SelectNodes("//p/img");
+                            var strP_tags = new string[p_tags.Count];
+                            if(p_tags != null)
                             {
-                                strImg = new string[imgs.Count];
-                                for (var i = 0; i < imgs.Count; i++)
+                                for(var i = 0; i < p_tags.Count; i++)
                                 {
-                                    strImg[i] = string.Format("<img src='{0}'>", imgs[i].Attributes["data-ks-lazyload"].Value);
+                                    strP_tags[i] = string.Format("<img src='{0}'>", p_tags[i].Attributes["data-ks-lazyload"].Value);
                                 }
-                                //sql_detail_img = String.Join("&$%", strImg);
-                                sql_detail_img = String.Join("", strImg);
+                                sql_detail_img += String.Join("", strP_tags);
+                            }
+                            var div_p_font_img = doc_img.DocumentNode.SelectNodes("//div/p/font/img");
+                            var strDiv_p_font_img = new string[div_p_font_img.Count];
+                            if(div_p_font_img != null)
+                            {
+                                for(var i = 0; i < div_p_font_img.Count; i++)
+                                {
+                                    strDiv_p_font_img[i] = string.Format("<img src='{0}'>", div_p_font_img[i].Attributes["data-ks-lazyload"].Value);
+                                }
+                                sql_detail_img += String.Join("", strDiv_p_font_img);
+                            }
+                            else
+                            {
+                                imgs = doc_img.DocumentNode.SelectNodes("//img[@data-ks-lazyload]");
+                                if (imgs != null)
+                                {
+                                    strImg = new string[imgs.Count];
+                                    for (var i = 0; i < imgs.Count; i++)
+                                    {
+                                        strImg[i] = string.Format("<img src='{0}'>", imgs[i].Attributes["data-ks-lazyload"].Value);
+                                    }
+                                    //sql_detail_img = String.Join("&$%", strImg);
+                                    sql_detail_img += String.Join("", strImg);
+                                }
                             }
                         }
                         // 타오바오 상품가격 : prd_price
@@ -490,10 +522,17 @@ namespace webCrawler
                             opt_imgs = new List<string>();
                             foreach(var item in opts_with_img)
                             {
-                                back_img_start = item.Attributes["style"].Value.IndexOf("url(");
-                                back_img_end = item.Attributes["style"].Value.IndexOf(".jpg_");
-                                opt_back_url = item.Attributes["style"].Value.Substring(back_img_start + 4, (back_img_end - back_img_start));
-                                opt_imgs.Add(opt_back_url + "^^" + item.ChildNodes["span"].InnerText);
+                                if (item.Attributes["style"] == null)
+                                {
+                                    opt_imgs.Add(opt_back_url + "^^" + item.ChildNodes["span"].InnerText);
+                                }
+                                else if(item.Attributes["style"].Value.IndexOf(".jpg_") > -1 || item.Attributes["style"].Value.IndexOf(".png_") > -1)
+                                {
+                                    back_img_start = item.Attributes["style"].Value.IndexOf("url(");
+                                    back_img_end = (item.Attributes["style"].Value.IndexOf(".jpg_") > -1 ? item.Attributes["style"].Value.IndexOf(".jpg_") : item.Attributes["style"].Value.IndexOf(".png_"));
+                                    opt_back_url = item.Attributes["style"].Value.Substring(back_img_start + 4, (back_img_end - back_img_start));
+                                    opt_imgs.Add(opt_back_url + "^^" + item.ChildNodes["span"].InnerText);
+                                }
                             }
                         }
                         if (opt_imgs.Count > 0) sql_opt_imgs = string.Join(",", opt_imgs);
@@ -547,35 +586,35 @@ namespace webCrawler
                                     {
                                         case 1:
                                             if (item.ChildNodes.Count == 1)
-                                                sql_add_img_1 = item.ChildNodes["a"].InnerHtml;
+                                                sql_add_img_1 = "https://" + item.ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             else if (item.ChildNodes[1].Name == "a")
-                                                sql_add_img_1 = item.ChildNodes["a"].InnerHtml;
+                                                sql_add_img_1 = "https://" + item.ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             else if (item.ChildNodes[1].Name == "div")
-                                                sql_add_img_1 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
+                                                sql_add_img_1 = "https://" + item.ChildNodes["div"].ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             break;
                                         case 2:
                                             if (item.ChildNodes.Count == 1)
-                                                sql_add_img_2 = item.ChildNodes["a"].InnerHtml;
+                                                sql_add_img_2 = "https://" + item.ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             else if (item.ChildNodes[1].Name == "a")
-                                                sql_add_img_2 = item.ChildNodes["a"].InnerHtml;
+                                                sql_add_img_2 = "https://" + item.ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             else if (item.ChildNodes[1].Name == "div")
-                                                sql_add_img_2 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
+                                                sql_add_img_2 = "https://" + item.ChildNodes["div"].ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             break;
                                         case 3:
                                             if (item.ChildNodes.Count == 1)
-                                                sql_add_img_3 = item.ChildNodes["a"].InnerHtml;
+                                                sql_add_img_3 = "https://" + item.ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             else if (item.ChildNodes[1].Name == "a")
-                                                sql_add_img_3 = item.ChildNodes["a"].InnerHtml;
+                                                sql_add_img_3 = "https://" + item.ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             else if (item.ChildNodes[1].Name == "div")
-                                                sql_add_img_3 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
+                                                sql_add_img_3 = "https://" + item.ChildNodes["div"].ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             break;
                                         case 4:
                                             if (item.ChildNodes.Count == 1)
-                                                sql_add_img_4 = item.ChildNodes["a"].InnerHtml;
+                                                sql_add_img_4 = "https://" + item.ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             else if (item.ChildNodes[1].Name == "a")
-                                                sql_add_img_4 = item.ChildNodes["a"].InnerHtml;
+                                                sql_add_img_4 = "https://" + item.ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             else if (item.ChildNodes[1].Name == "div")
-                                                sql_add_img_4 = item.ChildNodes["div"].ChildNodes["a"].InnerHtml;
+                                                sql_add_img_4 = "https://" + item.ChildNodes["div"].ChildNodes["a"].ChildNodes["img"].Attributes["src"].Value;
                                             break;
                                     }
                                 }
@@ -963,13 +1002,20 @@ namespace webCrawler
                     txt_crawling_status.Text = id;
 
                     puppeteer_page = await pup_browser.NewPageAsync();
-                    var response = await puppeteer_page.GoToAsync("https://detail.tmall.com/item.htm?id=" + id, new NavigationOptions
-                    {
-                        WaitUntil = new WaitUntilNavigation[]
-                        {
-                        WaitUntilNavigation.Networkidle0
-                        }
-                    });
+                    await puppeteer_page.GoToAsync("https://detail.tmall.com/item.htm?id=" + id);
+                    await puppeteer_page.WaitForSelectorAsync("#tstart");
+                    //var response = await puppeteer_page.GoToAsync("https://detail.tmall.com/item.htm?id=" + id, new NavigationOptions
+                    //{
+                    //    WaitUntil = new WaitUntilNavigation[]
+                    //    {
+                    //    WaitUntilNavigation.Networkidle0
+                    //    }
+                    //});
+                    //await puppeteer_page.SetViewportAsync(new ViewPortOptions
+                    //{
+                    //    Width = 800,
+                    //    Height = 2000
+                    //});
                     html_node.Add(await puppeteer_page.GetContentAsync());
                     success_ids.Add(id);
                 }

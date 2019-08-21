@@ -163,13 +163,17 @@ namespace webCrawler.Contoller
                 {
                     if (row.IsSelected)
                     {
+                        string prd_promo = row.Prd_promo;
+                        if (prd_promo.IndexOf('-') > -1) prd_promo = row.Prd_promo.Split('-')[1];
+                        string prd_price = row.Prd_price;
+                        if (prd_price.IndexOf('-') > -1) prd_price = row.Prd_price.Split('-')[1];
                         html = "";
                         ++i;
                         data[i, 0] = row.Id;
                         data[i, 1] = row.Prd_name;
-                        data[i, 7] = row.Prd_price;
-                        data[i, 8] = row.Prd_promo;
-                        data[i, 9] = row.Prd_promo;
+                        data[i, 7] = prd_promo;
+                        data[i, 8] = prd_promo;
+                        data[i, 9] = prd_price;
                         data[i, 10] = row.Prd_stock;
                         data[i, 11] = "과세";
                         data[i, 13] = row.Prd_brand;
@@ -192,7 +196,10 @@ namespace webCrawler.Contoller
                             foreach (var item in row.Opt_imgs.Split(','))
                             {
                                 html += "<div style='max-width:31%; display: inline-block; padding: .5rem;'>";
-                                html += "<img src='https:" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[0] + "' style='width:100%;'>";
+                                if (item.Split(new string[] { "^^" }, StringSplitOptions.None)[0] != "")
+                                {
+                                    html += "<img src='https:" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[0] + "' style='width:100%;'>";
+                                }
                                 if(item.Split(new string[] { "^^" }, StringSplitOptions.None).Length > 1) html += "<p style='margin-top:.5rem; text-align:center; font-weight:bold;'>" + item.Split(new string[] { "^^" }, StringSplitOptions.None)[1] + "</p>";
                                 html += "</div>";
                             }
@@ -202,10 +209,18 @@ namespace webCrawler.Contoller
                         data[i, 28] = html + row.Detail_img;       // 옵션이미지 태그 + 상세페이지 태그
                         data[i, 29] = html + row.Detail_img;
 
-                        data[i, 44] = row.Add_img_1;
-                        data[i, 45] = row.Add_img_2;
-                        data[i, 46] = row.Add_img_3;
-                        data[i, 47] = row.Add_img_4;
+                        data[i, 44] = row.Add_img_1.Split(new string[] { ".jpg"}, StringSplitOptions.None)[0] + ".jpg";
+                        data[i, 45] = row.Add_img_2.Split(new string[] { ".jpg" }, StringSplitOptions.None)[0] + ".jpg";
+                        data[i, 46] = row.Add_img_3.Split(new string[] { ".jpg" }, StringSplitOptions.None)[0] + ".jpg";
+                        data[i, 47] = row.Add_img_4.Split(new string[] { ".jpg" }, StringSplitOptions.None)[0] + ".jpg";
+                        data[i, 68] = "상세페이지 참고";
+                        data[i, 69] = "상세페이지 참고";
+                        data[i, 70] = "상세페이지 참고";
+                        data[i, 71] = "상세페이지 참고";
+                        data[i, 72] = "상세페이지 참고";
+                        data[i, 73] = "상세페이지 참고";
+                        data[i, 74] = "상세페이지 참고";
+                        data[i, 75] = "상세페이지 참고";
                         data[i, 126] = "https://detail.tmall.com/item.htm?id=" + row.Id;
                     }
                 }
