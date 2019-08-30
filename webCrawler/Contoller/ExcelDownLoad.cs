@@ -12,7 +12,7 @@ namespace webCrawler.Contoller
 {
     public static class ExcelDownLoad
     {
-        public  static void  fnExcelDownLoad(DataGrid dgMyDB, List<ViewModel.MyDBViewModel> myDBView_list)
+        public  static void  fnExcelDownLoad(DataGrid dgMyDB, List<ViewModel.MyDBViewModel> myDBView_list, float exchange)
         {
             var excel = new NsExcel.Application();
             excel.Visible = false;
@@ -159,21 +159,23 @@ namespace webCrawler.Contoller
 
                 int i = 0;
                 string html = "";
+                float f_exchange;
                 foreach (ViewModel.MyDBViewModel row in myDBView_list)
                 {
                     if (row.IsSelected)
                     {
                         string prd_promo = row.Prd_promo;
                         if (prd_promo.IndexOf('-') > -1) prd_promo = row.Prd_promo.Split('-')[1];
+                        if (float.TryParse(prd_promo, out f_exchange) == false) prd_promo = "0";
                         string prd_price = row.Prd_price;
                         if (prd_price.IndexOf('-') > -1) prd_price = row.Prd_price.Split('-')[1];
                         html = "";
                         ++i;
                         data[i, 0] = row.Id;
                         data[i, 1] = row.Prd_name;
-                        data[i, 7] = prd_promo;
-                        data[i, 8] = prd_promo;
-                        data[i, 9] = prd_price;
+                        data[i, 7] = float.Parse(prd_promo) * exchange;
+                        data[i, 8] = float.Parse(prd_promo) * exchange;
+                        data[i, 9] = float.Parse(prd_price) * exchange;
                         data[i, 10] = row.Prd_stock;
                         data[i, 11] = "과세";
                         data[i, 13] = row.Prd_brand;

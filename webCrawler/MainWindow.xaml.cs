@@ -495,9 +495,21 @@ namespace webCrawler
                                 string opt_name = opts[i].ChildNodes["dt"].InnerHtml;
                                 HtmlNodeCollection opt_vals = opts[i].ChildNodes["dd"].ChildNodes["ul"].SelectNodes("li");
                                 str_opts_value = new List<string>();
+
+                                // 옵션에 재고가 없는 경우는 가져오지 않음
+                                bool isSoldOut = false;
                                 foreach (HtmlNode child in opt_vals)
                                 {
-                                    str_opts_value.Add(child.ChildNodes["a"].ChildNodes["span"].InnerText);
+                                    isSoldOut = false;
+                                    if(child.Attributes["class"] != null)
+                                    {
+                                        // class에 tb-out-of-stock 이라는 글이 있을 경우 수집 제외.
+                                        if(child.Attributes["class"].Value == "tb-out-of-stock")
+                                        {
+                                            isSoldOut = true;
+                                        }
+                                    }
+                                    if(isSoldOut == false) str_opts_value.Add(child.ChildNodes["a"].ChildNodes["span"].InnerText);
                                 }
                                 opt_val = string.Join(",", str_opts_value); //  옵션값 -> 콤마(,)로 구분함.
                                 switch (i)
@@ -1389,7 +1401,15 @@ namespace webCrawler
         // 엑셀다운로드
         private void BtnDownloadExcel_Click(object sender, RoutedEventArgs e)
         {
-            webCrawler.Contoller.ExcelDownLoad.fnExcelDownLoad(dgMyDB, myDBView_list);
+            float exChange;
+            if(float.TryParse(txtExchange.Text, out exChange))
+            {
+                webCrawler.Contoller.ExcelDownLoad.fnExcelDownLoad(dgMyDB, myDBView_list, float.Parse(txtExchange.Text));
+            }
+            else
+            {
+                MessageBox.Show("환율 값을 정확히 입력해주세요.");
+            }
         }
         #endregion
         // 수집결과 출력
