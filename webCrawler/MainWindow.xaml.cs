@@ -410,31 +410,39 @@ namespace webCrawler
                         img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
                         if (img_wrap != null)
                         {
-                            if(img_wrap[0].ChildNodes["div"] != null)
-                            {
+                            //if(img_wrap[0].ChildNodes["div"] != null)
+                            //{
 
-                            }else if(img_wrap[0].ChildNodes["p"] != null)
-                            {
+                            //}else if(img_wrap[0].ChildNodes["p"] != null)
+                            //{
 
-                            }
+                            //}
 
                             doc_img = new HtmlDocument();
                             doc_img.LoadHtml(img_wrap[0].InnerHtml);
                             var p_tags = doc_img.DocumentNode.SelectNodes("//p/img");
-                            var strP_tags = new string[p_tags.Count];
                             if(p_tags != null)
                             {
-                                for(var i = 0; i < p_tags.Count; i++)
+                                var strP_tags = new string[p_tags.Count];
+                                for (var i = 0; i < p_tags.Count; i++)
                                 {
-                                    strP_tags[i] = string.Format("<img src='{0}'>", p_tags[i].Attributes["data-ks-lazyload"].Value);
+                                    if (p_tags[i].Attributes["data-ks-lazyload"] != null)
+                                    {
+                                        strP_tags[i] = string.Format("<img src='{0}'>", p_tags[i].Attributes["data-ks-lazyload"].Value);
+                                    }
+                                    else if (p_tags[i].Attributes["img-ks-lazyload"] != null)
+                                    {
+                                        strP_tags[i] = string.Format("<img src='{0}'>", p_tags[i].Attributes["data-ks-lazyload"].Value);
+                                    }
+                                    
                                 }
                                 sql_detail_img += String.Join("", strP_tags);
                             }
                             var div_p_font_img = doc_img.DocumentNode.SelectNodes("//div/p/font/img");
-                            var strDiv_p_font_img = new string[div_p_font_img.Count];
                             if(div_p_font_img != null)
                             {
-                                for(var i = 0; i < div_p_font_img.Count; i++)
+                                var strDiv_p_font_img = new string[div_p_font_img.Count];
+                                for (var i = 0; i < div_p_font_img.Count; i++)
                                 {
                                     strDiv_p_font_img[i] = string.Format("<img src='{0}'>", div_p_font_img[i].Attributes["data-ks-lazyload"].Value);
                                 }
@@ -456,7 +464,7 @@ namespace webCrawler
                             }
                         }
                         // 타오바오 상품가격 : prd_price
-                        price = doc.DocumentNode.SelectNodes("//dl[@class='tm-price-panel']/dd/span");
+                        price = doc.DocumentNode.SelectNodes("//dl[contains(@class,'tm-price-panel')]/dd/span");
                         if (price != null) sql_prd_price = price[0].InnerText;
                         else
                         {
