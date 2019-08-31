@@ -39,6 +39,7 @@ namespace webCrawler
         List<string> id_list = new List<string>();      // 상품 중복 파싱을 방지하기 위한 상품코드 저장하는 List
         List<ViewModel.ProductViewModel> prdView_list = new List<ViewModel.ProductViewModel>();
         List<ViewModel.ResultViewModel> result_view_list = new List<ViewModel.ResultViewModel>();
+        ViewModel.CategoryViewModel selectedCategory = null;
         int idx = 1;
 
         // 제외상품 리스트 관련 변수
@@ -804,13 +805,13 @@ namespace webCrawler
         private void btnStoreDB_Click(object sender, RoutedEventArgs e)
         {
             // 카테고리가 선택되어 있는지 확인
-            if (cbCategory.SelectedIndex == -1)
+            if (selectedCategory == null)
             {
                 MessageBox.Show("카테고리를 선택해주세요.");
                 return;
             }
-            ViewModel.CategoryViewModel category = (ViewModel.CategoryViewModel)cbCategory.SelectedItem;
-
+            //ViewModel.CategoryViewModel category = (ViewModel.CategoryViewModel)cbCategory.SelectedItem;
+            string catgory_code = string.Format("{0}{1}{2}{3}{4}", selectedCategory.Cate_type, selectedCategory.L, selectedCategory.M, selectedCategory.S, selectedCategory.XS);
             if (prdView_list == null) return;
             StringBuilder sINSERT = new StringBuilder("INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES ");
             StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_img, prd_name, prd_category, created_date) VALUES ");
@@ -828,7 +829,7 @@ namespace webCrawler
                                 MySqlHelper.EscapeString(row.Id),                              // 상품코드
                                 MySqlHelper.EscapeString(row.Prd_img.ToString()),   // 상품이미지
                                 MySqlHelper.EscapeString(row.Prd_name),                 // 상품명
-                                MySqlHelper.EscapeString(category.Id.ToString()),           // 상품카테고리
+                                MySqlHelper.EscapeString(catgory_code),           // 상품카테고리
                                 //MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
                                 MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))      // 생성일
                                 )
@@ -842,7 +843,7 @@ namespace webCrawler
                                 MySqlHelper.EscapeString(row.Id),                              // 상품코드
                                 MySqlHelper.EscapeString(row.Prd_img.ToString()),   // 상품이미지
                                 MySqlHelper.EscapeString(row.Prd_name),                 // 상품명
-                                MySqlHelper.EscapeString(category.Id.ToString()),           // 상품카테고리
+                                MySqlHelper.EscapeString(catgory_code),           // 상품카테고리
                                 //MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
                                 MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))      // 생성일
                                 )
@@ -1493,10 +1494,22 @@ namespace webCrawler
 
         private void BtnGetMyDB_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)cbDbListCategory.SelectedItem;
-            if (item != null) getMyDB(item.Id.ToString());
+            if (selectedCategory != null)
+            {
+                string category_id = string.Format("{0}{1}{2}{3}{4}", selectedCategory.Cate_type, selectedCategory.L, selectedCategory.M, selectedCategory.S, selectedCategory.XS);
+                getMyDB(category_id);
+            }
+            else
+            {
+                MessageBox.Show("카테고리를 선택해주세요.");
+            }
+
+            //ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)cbDbListCategory.SelectedItem;
+
+            //if (item != null) getMyDB(item.Id.ToString());
+            
         }
-        //   대분류 선택시 실행되는 이벤트
+        #region 환경설정 카테고리 ListView 선택 이벤트
         private void LvCategory_L_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var listbox = (ListBox)sender;
@@ -1522,7 +1535,6 @@ namespace webCrawler
             lvCategory_XS.ItemsSource = webCrawler.Contoller.Category.readCategory("D", list);
             setCateVal();
         }
-
         private void LvCategory_XS_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             //var listbox = (ListBox)sender;
@@ -1530,8 +1542,7 @@ namespace webCrawler
             //lvCategory_M.ItemsSource = webCrawler.Contoller.Category.readCategory("B", list);
             setCateVal();
         }
-
-        //  카테고리를 선택하면 선택된 카테고리를 보여준다.
+        #endregion
         private void setCateVal()
         {
             StringBuilder cate_name = new StringBuilder("");
@@ -1583,29 +1594,76 @@ namespace webCrawler
             lvCategory_S.ItemsSource = null;
             lvCategory_XS.ItemsSource = null;
         }
-
+        #region 메인화면 카테고리 콤보박스 선택 이벤트
         private void CbCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
+            var comboBox = (ComboBox)sender;
+            var selectedItem = (ViewModel.CategoryViewModel)comboBox.SelectedItem;
+            cbCategory_M.ItemsSource = webCrawler.Contoller.Category.readCategory("B", selectedItem);
+            cbCategory_S.ItemsSource = null;
+            cbCategory_XS.ItemsSource = null;
+            selectedCategory = selectedItem;
         }
 
         private void CbCategory_M_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
+            var comboBox = (ComboBox)sender;
+            var selectedItem = (ViewModel.CategoryViewModel)comboBox.SelectedItem;
+            cbCategory_S.ItemsSource = webCrawler.Contoller.Category.readCategory("C", selectedItem);
+            cbCategory_XS.ItemsSource = null;
+            selectedCategory = selectedItem;
         }
 
         private void CbCategory_S_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
+            var comboBox = (ComboBox)sender;
+            var selectedItem = (ViewModel.CategoryViewModel)comboBox.SelectedItem;
+            cbCategory_XS.ItemsSource = webCrawler.Contoller.Category.readCategory("D", selectedItem);
+            selectedCategory = selectedItem;
         }
 
         private void CbCategory_XS_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
+            var comboBox = (ComboBox)sender;
+            var selectedItem = (ViewModel.CategoryViewModel)comboBox.SelectedItem;
+            selectedCategory = selectedItem;
+        }
+        #endregion
+        #region DB List 화면 카테고리 콤보박스 선택 이벤트
+        private void CbDbListCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var comboBox = (ComboBox)sender;
+            var selectedItem = (ViewModel.CategoryViewModel)comboBox.SelectedItem;
+            cbDbListCategory_M.ItemsSource = webCrawler.Contoller.Category.readCategory("B", selectedItem);
+            cbDbListCategory_S.ItemsSource = null;
+            cbDbListCategory_XS.ItemsSource = null;
+            selectedCategory = selectedItem;
         }
 
+        private void CbDbListCategory_M_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var comboBox = (ComboBox)sender;
+            var selectedItem = (ViewModel.CategoryViewModel)comboBox.SelectedItem;
+            cbDbListCategory_S.ItemsSource = webCrawler.Contoller.Category.readCategory("C", selectedItem);
+            cbDbListCategory_XS.ItemsSource = null;
+            selectedCategory = selectedItem;
+        }
 
+        private void CbDbListCategory_S_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var comboBox = (ComboBox)sender;
+            var selectedItem = (ViewModel.CategoryViewModel)comboBox.SelectedItem;
+            cbDbListCategory_XS.ItemsSource = webCrawler.Contoller.Category.readCategory("D", selectedItem);
+            selectedCategory = selectedItem;
+        }
 
+        private void CbDbListCategory_XS_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var comboBox = (ComboBox)sender;
+            var selectedItem = (ViewModel.CategoryViewModel)comboBox.SelectedItem;
+            selectedCategory = selectedItem;
+        }
+        #endregion
         // 시스템이 종료될 때 puppeteer도 함께 종료시킴.
         private async void Window_Closed(object sender, EventArgs e)
         {

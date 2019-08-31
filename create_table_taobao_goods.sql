@@ -33,7 +33,7 @@ CREATE TABLE `taobao_goods` (
 
 
 select * from taobao_goods
-WHERE substr(created_date, 1, 10) = '2019-08-01';
+WHERE substr(created_date, 1, 10) = '2019-08-31';
 
 select * from taobao_goods g
 LEFT OUTER JOIN taobao_category c
