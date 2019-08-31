@@ -6,41 +6,24 @@ using System.Threading.Tasks;
 
 namespace webCrawler.ViewModel
 {
-    public class CategoryViewModel:ViewModelBase
+    public class CategoryViewModel_L : ViewModelBase
     {
-        private bool _IsSelected = false;
         private int _num;
         private int _id;
         private string _cate_name;
         private string _cate_type;
         private string _L;
-        private string _M;
-        private string _S;
-        private string _XS;
         private string _CODE;
-        private CategoryViewModel(){}
-        
-        public CategoryViewModel(bool isSelected, int num, int id, string cate_name, string cate_type, string L, string M, string S, string XS, string CODE)
+        private CategoryViewModel_L() { }
+
+        public CategoryViewModel_L(int num, int id, string cate_name, string cate_type, string L, string CODE)
         {
-            _IsSelected = isSelected;
             _num = num;
             _id = id;
             _cate_name = cate_name;
             _cate_type = cate_type;
             _L = L;
-            _M = M;
-            _S = S;
-            _XS = XS;
             _CODE = CODE;
-        }
-        public bool IsSelected
-        {
-            get { return _IsSelected; }
-            set
-            {
-                _IsSelected = value;
-                OnPropertyChanged("IsSelected");
-            }
         }
         public int Num
         {
@@ -66,21 +49,6 @@ namespace webCrawler.ViewModel
         {
             get { return _L; }
             set { _L = value; }
-        }
-        public string M
-        {
-            get { return _M; }
-            set { _M = value; }
-        }
-        public string S
-        {
-            get { return _S; }
-            set { _S = value; }
-        }
-        public string XS
-        {
-            get { return _XS; }
-            set { _XS = value; }
         }
         public string CODE
         {

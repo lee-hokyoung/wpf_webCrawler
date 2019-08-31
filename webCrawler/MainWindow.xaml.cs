@@ -52,7 +52,7 @@ namespace webCrawler
             this.DataContext = new ViewModel.ProductViewModel();
             InitializeChromium();
             getDbData();
-            cbCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+            cbCategory.ItemsSource = webCrawler.Contoller.Category.readCategory("A");
             InitTaobao();
         }
         // puppeteer 로그인
@@ -1085,7 +1085,7 @@ namespace webCrawler
             myDb_doc.Visibility = Visibility.Collapsed;
             doc_CtrlDelPrd.Visibility = Visibility.Collapsed;
             doc_config.Visibility = Visibility.Collapsed;
-            cbCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+            cbCategory.ItemsSource = webCrawler.Contoller.Category.readCategory("A");
         }
         // DB List 탭 클릭
         private void BtnNext_Click(object sender, RoutedEventArgs e)
@@ -1094,7 +1094,7 @@ namespace webCrawler
             myDb_doc.Visibility = Visibility.Visible;
             doc_CtrlDelPrd.Visibility = Visibility.Collapsed;
             doc_config.Visibility = Visibility.Collapsed;
-            cbDbListCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+            cbDbListCategory.ItemsSource = webCrawler.Contoller.Category.readCategory("A");
         }
         // 제외 상품 관리 탭 클릭
         private void BtnCtrlDelPrd_Click(object sender, RoutedEventArgs e)
@@ -1112,7 +1112,8 @@ namespace webCrawler
             myDb_doc.Visibility = Visibility.Collapsed;
             doc_CtrlDelPrd.Visibility = Visibility.Collapsed;
             doc_config.Visibility = Visibility.Visible;
-            ListViewConfigCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+            lvCategory_L.ItemsSource = webCrawler.Contoller.Category.readCategory("A");
+            initCategoryView();
         }
         // Main 화면 이동 버튼 클릭 이벤트
         private void btn_main_Click(object sender, RoutedEventArgs e)
@@ -1448,32 +1449,45 @@ namespace webCrawler
             if(item != null) getMyDB(item.Id.ToString());
         }
         #region 카테고리관련 이벤트 모음
+        // 카테고리 입력 : '대분류/중분류/소분류/세분류', 품목고시코드 : '135'
         private void BtnCategoryAdd_Click(object sender, RoutedEventArgs e)
         {
-            webCrawler.Contoller.Category.createCategory(txtCategoryName.Text, txtCategoryDesc.Text);
-            txtCategoryName.Text = "";  txtCategoryDesc.Text = "";
-            ListViewConfigCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+            if(txtCategoryName.Text != "")
+            {
+                webCrawler.Contoller.Category.createCategory(txtCategoryName.Text, txtCategoryDesc.Text, txtCategoryCode.Text);
+                //txtCategoryName.Text = ""; txtCategoryDesc.Text = "";
+                //lvCategory_L.ItemsSource = webCrawler.Contoller.Category.readCategory("A");
+                //initCategoryView();
+            }
+            else
+            {
+                MessageBox.Show("카테고리 값은 필수 입력 값입니다. ");
+            }
         }
+
+
         private void BtnCategoryUpdate_Click(object sender, RoutedEventArgs e)
         {
-            webCrawler.Contoller.Category.updateCategory(txtCategoryId.Text, txtCategoryName.Text, txtCategoryDesc.Text);
-            ListViewConfigCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+            webCrawler.Contoller.Category.updateCategory(txtCategoryId.Text, txtCategoryCode.Text, txtCategoryDesc.Text);
+            //lvCategory_L.ItemsSource = webCrawler.Contoller.Category.readCategory("A");
+            initCategoryView();
         }
         private void BtnCategoryDelete_Click(object sender, RoutedEventArgs e)
         {
             webCrawler.Contoller.Category.deleteCategory(txtCategoryId.Text);
-            ListViewConfigCategory.ItemsSource = webCrawler.Contoller.Category.readCategory();
+            lvCategory_L.ItemsSource = webCrawler.Contoller.Category.readCategory("A");
+
         }
         private void ListViewConfigCategory_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            int idx = ListViewConfigCategory.SelectedIndex;
-            if(idx > -1)
-            {
-                ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)ListViewConfigCategory.SelectedItems[0];
-                txtCategoryName.Text = item.Cate_name;
-                txtCategoryDesc.Text = item.Cate_desc;
-                txtCategoryId.Text = item.Id.ToString();
-            }
+            //int idx = ListViewConfigCategory.SelectedIndex;
+            //if(idx > -1)
+            //{
+            //    ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)ListViewConfigCategory.SelectedItems[0];
+            //    txtCategoryName.Text = item.Cate_name;
+            //    txtCategoryDesc.Text = item.Cate_desc;
+            //    txtCategoryId.Text = item.Id.ToString();
+            //}
         }
         #endregion
 
@@ -1482,6 +1496,115 @@ namespace webCrawler
             ViewModel.CategoryViewModel item = (ViewModel.CategoryViewModel)cbDbListCategory.SelectedItem;
             if (item != null) getMyDB(item.Id.ToString());
         }
+        //   대분류 선택시 실행되는 이벤트
+        private void LvCategory_L_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var listbox = (ListBox)sender;
+            var list = (ViewModel.CategoryViewModel)listbox.SelectedItem;
+            lvCategory_M.ItemsSource = webCrawler.Contoller.Category.readCategory("B", list);
+            lvCategory_S.ItemsSource = null;
+            lvCategory_XS.ItemsSource = null;
+            setCateVal();
+        }
+        private void LvCategory_M_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var listbox = (ListBox)sender;
+            var list = (ViewModel.CategoryViewModel)listbox.SelectedItem;
+            lvCategory_S.ItemsSource = webCrawler.Contoller.Category.readCategory("C", list);
+            lvCategory_XS.ItemsSource = null;
+            setCateVal();
+        }
+
+        private void LvCategory_S_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var listbox = (ListBox)sender;
+            var list = (ViewModel.CategoryViewModel)listbox.SelectedItem;
+            lvCategory_XS.ItemsSource = webCrawler.Contoller.Category.readCategory("D", list);
+            setCateVal();
+        }
+
+        private void LvCategory_XS_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            //var listbox = (ListBox)sender;
+            //var list = (ViewModel.CategoryViewModel)listbox.SelectedItem;
+            //lvCategory_M.ItemsSource = webCrawler.Contoller.Category.readCategory("B", list);
+            setCateVal();
+        }
+
+        //  카테고리를 선택하면 선택된 카테고리를 보여준다.
+        private void setCateVal()
+        {
+            StringBuilder cate_name = new StringBuilder("");
+            StringBuilder cate_code = new StringBuilder("");
+            ViewModel.CategoryViewModel cate_l = null, cate_m = null, cate_s = null, cate_xs = null;
+            string code = "";
+            int cate_id = 0;
+            if (lvCategory_L.SelectedValue != null)
+            {
+                cate_l = (ViewModel.CategoryViewModel)lvCategory_L.SelectedValue;
+                cate_name.Append(cate_l.Cate_name);
+                cate_code.Append(cate_l.L);
+                code = cate_l.CODE;
+                cate_id = cate_l.Id;
+            }
+            if (lvCategory_M.SelectedValue != null)
+            {
+                cate_m = (ViewModel.CategoryViewModel)lvCategory_M.SelectedValue;
+                cate_name.Append(string.Format("/{0}", cate_m.Cate_name));
+                cate_code.Append(string.Format("/{0}", cate_m.M));
+                code = cate_m.CODE;
+                cate_id = cate_m.Id;
+            }
+            if (lvCategory_S.SelectedValue != null)
+            {
+                cate_s = (ViewModel.CategoryViewModel)lvCategory_S.SelectedValue;
+                cate_name.Append(string.Format("/{0}", cate_s.Cate_name));
+                cate_code.Append(string.Format("/{0}", cate_s.S));
+                code = cate_s.CODE;
+                cate_id = cate_s.Id;
+            }
+            if (lvCategory_XS.SelectedValue != null)
+            {
+                cate_xs = (ViewModel.CategoryViewModel)lvCategory_XS.SelectedValue;
+                cate_name.Append(string.Format("/{0}", cate_xs.Cate_name));
+                cate_code.Append(string.Format("/{0}", cate_xs.XS));
+                code = cate_xs.CODE;
+                cate_id = cate_xs.Id;
+            }
+            txtCategoryName.Text = cate_name.ToString();
+            txtCategoryCode.Text = cate_code.ToString();
+            txtCategoryDesc.Text = code;
+            txtCategoryId.Text = cate_id.ToString();
+        }
+
+        private void initCategoryView()
+        {
+            lvCategory_M.ItemsSource = null;
+            lvCategory_S.ItemsSource = null;
+            lvCategory_XS.ItemsSource = null;
+        }
+
+        private void CbCategory_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void CbCategory_M_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void CbCategory_S_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+        private void CbCategory_XS_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+
+        }
+
+
 
         // 시스템이 종료될 때 puppeteer도 함께 종료시킴.
         private async void Window_Closed(object sender, EventArgs e)

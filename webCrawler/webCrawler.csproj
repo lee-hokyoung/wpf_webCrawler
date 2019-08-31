@@ -211,6 +211,7 @@
     <Compile Include="Settings.cs" />
     <Compile Include="ViewModelBase.cs" />
     <Compile Include="ViewModel\CategoryViewModel.cs" />
+    <Compile Include="ViewModel\CategoryViewMode_L.cs" />
     <Compile Include="ViewModel\delProductViewModel.cs" />
     <Compile Include="ViewModel\MyDBViewModel.cs" />
     <Compile Include="ViewModel\ProductViewModel.cs" />

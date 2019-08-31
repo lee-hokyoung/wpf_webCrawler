@@ -12,12 +12,15 @@ UPDATE taobao_category SET cate_name = 'tesst', cate_desc = 'asdfxcvcxz' WHERE i
 
 CREATE TABLE category(
 	`id` int auto_increment primary key,
+    `cate_name` VARCHAR(200) NOT NULL,
     `cate_type` VARCHAR(1) NOT NULL,
-    `L` VARCHAR(2) NOT NULL, 
-    `M` VARCHAR(2) NOT NULL,
-    `S` VARCHAR(2) NOT NULL,
-    `XS` VARCHAR(3) NOT NULL,
-    `CODE` VARCHAR(20) NOT NULL
+    `L` VARCHAR(2) NOT NULL,
+    `M` VARCHAR(2) NULL default '00',
+    `S` VARCHAR(2) NULL default '00',
+    `XS` VARCHAR(3) NULL default '00',
+    `CODE` VARCHAR(20) NULL
 );
 
+DROP TABLE category;
 SELECT * FROM category;
+INSERT INTO category(cate_name, cate_type, L) VALUE('신발', 'A', '01');
