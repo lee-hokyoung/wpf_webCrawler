@@ -22,5 +22,18 @@ CREATE TABLE category(
 );
 
 DROP TABLE category;
-SELECT * FROM category;
 INSERT INTO category(cate_name, cate_type, L) VALUE('신발', 'A', '01');
+
+SELECT * FROM category 
+/*WHERE L = '01' AND M = '03' AND cate_type = 'C'*/
+order by cate_type, L, M, S, XS;
+SELECT * FROM category WHERE M = "01";
+SELECT MAX(L) as L FROM category;
+SELECT * FROM category WHERE cate_name in ('의류', '신발') and cate_type = 'A';
+SELECT count(*) as cnt, L FROM category WHERE cate_name = '의류1' AND cate_type = 'A';
+
+SELECT count(*) as cnt, L FROM category WHERE cate_name = '악세사리' AND cate_type = 'A';
+
+UPDATE category SET S = '03', XS = '00' WHERE id = 13;
+
+UPDATE category SET L = '01', M = '03', S = '02', XS = '01', CODE = '123' WHERE id = 11;

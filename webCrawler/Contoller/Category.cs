@@ -82,9 +82,9 @@ namespace webCrawler.Contoller
                     {
                         int max = 0;
                         string strMax = "", code = "00";
-                        if (arrCode.Length > 1) code = arrCode[1];
+                        //if (arrCode.Length > 1) code = arrCode[1];
                         StringBuilder insertQuery = new StringBuilder("INSERT INTO category(cate_name, cate_type, L, M) ");
-                        using (MySqlCommand cmd = new MySqlCommand(string.Format("SELECT MAX(M) as M FROM category WHERE L = '{0}';", code), conn))
+                        using (MySqlCommand cmd = new MySqlCommand(string.Format("SELECT MAX(M) as M FROM category WHERE L = '{0}';", strL), conn))
                         {
                             cmd.CommandType = CommandType.Text;
                             cmd.CommandTimeout = 1000;
@@ -124,9 +124,9 @@ namespace webCrawler.Contoller
                     {
                         int max = 0;
                         string strMax = "", code = "00";
-                        if (arrCode.Length > 2) code = arrCode[2];
+                        //if (arrCode.Length > 2) code = arrCode[2];
                         StringBuilder insertQuery = new StringBuilder("INSERT INTO category(cate_name, cate_type, L, M, S) ");
-                        using (MySqlCommand cmd = new MySqlCommand(string.Format("SELECT MAX(S) as S FROM category WHERE M = '{0}';", code), conn))
+                        using (MySqlCommand cmd = new MySqlCommand(string.Format("SELECT MAX(S) as S FROM category WHERE L = '{0}' AND M = '{1}';", strL, strM), conn))
                         {
                             cmd.CommandType = CommandType.Text;
                             cmd.CommandTimeout = 1000;
@@ -166,9 +166,9 @@ namespace webCrawler.Contoller
                     {
                         int max = 0;
                         string strMax = "", code = "00";
-                        if (arrCode.Length > 3) code = arrCode[3];
+                        //if (arrCode.Length > 3) code = arrCode[3];
                         StringBuilder insertQuery = new StringBuilder("INSERT INTO category(cate_name, cate_type, L, M, S, XS) ");
-                        using (MySqlCommand cmd = new MySqlCommand(string.Format("SELECT MAX(XS) as XS FROM category WHERE S = '{0}';", code), conn))
+                        using (MySqlCommand cmd = new MySqlCommand(string.Format("SELECT MAX(XS) as XS FROM category WHERE L = '{0}' AND M = '{1}' AND  S = '{2}'; ", strL, strM, strS), conn))
                         {
                             cmd.CommandType = CommandType.Text;
                             cmd.CommandTimeout = 1000;

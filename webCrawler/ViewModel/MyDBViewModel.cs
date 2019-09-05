@@ -36,12 +36,13 @@ namespace webCrawler.ViewModel
         private string _created_date;          // 생성일
         private string _updated_date;          // 수정일
         private string _user_id;                    // 사용자 ID
+        private string _item_code;              // 품목고시 코드
         public MyDBViewModel() { }
         public MyDBViewModel(bool isSelected, int num, string id, BitmapImage prd_img, string prd_category, string prd_name,
             string prd_attr, string detail_yn, string prd_price, string prd_promo, string prd_brand,
             string opt_1, string opt_val_1, string opt_2, string opt_val_2, string opt_3, string opt_val_3, string opt_imgs, 
             string prd_stock, string detail_img, string add_img_1, string add_img_2, string add_img_3, string add_img_4, 
-            string created_date, string updated_date, string user_id)
+            string created_date, string updated_date, string user_id, string item_code)
         {
             _isSelected = isSelected;
             _num = num;
@@ -71,6 +72,7 @@ namespace webCrawler.ViewModel
             _created_date = created_date;
             _updated_date = updated_date;
             _user_id = user_id;
+            _item_code = item_code;
         }
         public bool IsSelected
         {
@@ -216,7 +218,11 @@ namespace webCrawler.ViewModel
             get { return _user_id; }
             set { _user_id = value; }
         }
-
+        public string Item_code
+        {
+            get { return _item_code; }
+            set { _item_code = value; }
+        }
         private ObservableCollection<MyDBViewModel> myDBViewCollection = new ObservableCollection<MyDBViewModel>();
         public ObservableCollection<MyDBViewModel> MyDBViewCollection
         {

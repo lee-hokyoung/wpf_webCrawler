@@ -641,7 +641,8 @@ namespace webCrawler
                                 }
                             }
                         }
-
+                        if (sql_prd_promo == "") sql_prd_promo = sql_prd_price;
+                        if (sql_prd_price == "") sql_prd_price = sql_prd_promo;
                         update_rows.Add(string.Format("('{0}','{1}','{2}','{3}','{4}','{5}','{6}','{7}','{8}','{9}','{10}','{11}','{12}','{13}','{14}','{15}','{16}','{17}','{18}')",
                             MySqlHelper.EscapeString(sql_id),
                             MySqlHelper.EscapeString(sql_prd_price),
@@ -812,9 +813,10 @@ namespace webCrawler
             }
             //ViewModel.CategoryViewModel category = (ViewModel.CategoryViewModel)cbCategory.SelectedItem;
             string catgory_code = string.Format("{0}{1}{2}{3}{4}", selectedCategory.Cate_type, selectedCategory.L, selectedCategory.M, selectedCategory.S, selectedCategory.XS);
+            string item_code = selectedCategory.CODE;
             if (prdView_list == null) return;
-            StringBuilder sINSERT = new StringBuilder("INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date) VALUES ");
-            StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_img, prd_name, prd_category, created_date) VALUES ");
+            StringBuilder sINSERT = new StringBuilder("INSERT INTO taobao_goods(id, prd_img, prd_name, prd_category, created_date, item_code) VALUES ");
+            StringBuilder sUPDATE = new StringBuilder("INSERT INTO tmp(id, prd_img, prd_name, prd_category, created_date, item_code) VALUES ");
             List<string> insert_rows = new List<string>();
             List<string> update_rows = new List<string>();
             using (MySqlConnection mConn = new MySqlConnection(strConn))
@@ -825,13 +827,14 @@ namespace webCrawler
                     {
                         if (row.Prd_exist != "O" & row.Prd_status != "9")
                         {
-                            insert_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}')",
+                            insert_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')",
                                 MySqlHelper.EscapeString(row.Id),                              // 상품코드
                                 MySqlHelper.EscapeString(row.Prd_img.ToString()),   // 상품이미지
                                 MySqlHelper.EscapeString(row.Prd_name),                 // 상품명
                                 MySqlHelper.EscapeString(catgory_code),           // 상품카테고리
                                 //MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
-                                MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))      // 생성일
+                                MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")),      // 생성일
+                                MySqlHelper.EscapeString(item_code)
                                 )
                             );
                             row.Prd_exist = "O";
@@ -839,13 +842,14 @@ namespace webCrawler
                         }
                         else
                         {
-                            update_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}')",
+                            update_rows.Add(string.Format("('{0}', '{1}', '{2}', '{3}', '{4}', '{5}')",
                                 MySqlHelper.EscapeString(row.Id),                              // 상품코드
                                 MySqlHelper.EscapeString(row.Prd_img.ToString()),   // 상품이미지
                                 MySqlHelper.EscapeString(row.Prd_name),                 // 상품명
                                 MySqlHelper.EscapeString(catgory_code),           // 상품카테고리
                                 //MySqlHelper.EscapeString(row.Prd_category),           // 상품카테고리
-                                MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"))      // 생성일
+                                MySqlHelper.EscapeString(DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")),      // 생성일
+                                MySqlHelper.EscapeString(item_code)
                                 )
                             );
                             row.Prd_type = "[Updated]";
@@ -869,7 +873,7 @@ namespace webCrawler
                     #region 기존 상품 UPDATE
                     if(update_rows.Count > 0)
                     {
-                        string tmpCreate = "CREATE TABLE tmp(id VARCHAR(20), prd_img VARCHAR(200), prd_name VARCHAR(100), prd_category VARCHAR(45), created_date VARCHAR(45)) " +
+                        string tmpCreate = "CREATE TABLE tmp(id VARCHAR(20), prd_img VARCHAR(200), prd_name VARCHAR(100), prd_category VARCHAR(45), created_date VARCHAR(45), item_code VARCHAR(20) ) " +
                             "DEFAULT CHARACTER SET = utf8 " +
                             "COLLATE = utf8_bin;";
                         MySqlCommand myCmdTemp = new MySqlCommand(tmpCreate, mConn);
@@ -886,7 +890,7 @@ namespace webCrawler
 
                             myCmd.CommandText = string.Format(
                                 "UPDATE tmp T INNER JOIN taobao_goods TB ON T.id = TB.id " +
-                                "SET TB.prd_img = T.prd_img, TB.prd_name = T.prd_name, TB.prd_category = T.prd_category, TB.updated_date = '{0}'; " +
+                                "SET TB.prd_img = T.prd_img, TB.prd_name = T.prd_name, TB.prd_category = T.prd_category, TB.updated_date = '{0}', TB.item_code = T.item_code ; " +
                                 "DROP TABLE tmp;",
                                 DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
                             );
@@ -1151,19 +1155,41 @@ namespace webCrawler
         //  상품정보 읽어오기
         private void getMyDB(string cate_id)
         {
+            // 카테고리 대/중/소/세 유형에 따라 검색어를 다르게 적용한다.
+            string category_code = "";
+            string substr_pos = "2";
+            switch (cate_id.Substring(0, 1))
+            {
+                case "A":
+                    category_code = cate_id.Substring(1, 2);
+                    substr_pos = "2";
+                    break;
+                case "B":
+                    category_code = cate_id.Substring(1, 4);
+                    substr_pos = "4";
+                    break;
+                case "C":
+                    category_code = cate_id.Substring(1, 6);
+                    substr_pos = "6";
+                    break;
+                case "D":
+                    category_code = cate_id.Substring(1, 8);
+                    substr_pos = "8";
+                    break;
+            }
             MySqlConnection conn = null;
             try
             {
                 StringBuilder query_builder = new StringBuilder();
                 query_builder.Append(string.Format(
-                    "SELECT G.id as id, G.prd_img as prd_img , C.cate_name as prd_category, G.prd_name as prd_name, G.prd_attr as prd_attr, G.detail_yn as detail_yn, G.prd_price as prd_price, G.prd_promo as prd_promo, G.prd_brand as prd_brand, " +
+                    "SELECT G.id as id, G.prd_img as prd_img , G.prd_category as prd_category, G.prd_name as prd_name, G.prd_attr as prd_attr, G.detail_yn as detail_yn, G.prd_price as prd_price, G.prd_promo as prd_promo, G.prd_brand as prd_brand, " +
                     "G.opt_1 as opt_1, G.opt_val_1 as opt_val_1, G.opt_2 as opt_2, G.opt_val_2 as opt_val_2, G.opt_3 as opt_3, G.opt_val_3 as opt_val_3, " +
                     "G.prd_opt_imgs as prd_opt_imgs, G.prd_stock as prd_stock, G.detail_img as detail_img, G.add_img_1 as add_img_1, G.add_img_2 as add_img_2, G.add_img_3 as add_img_3, G.add_img_4 as add_img_4, " +
-                    "G.created_date as created_date, G.updated_date as updated_date, G.user_id as user_id, " +
-                    "C.Id as cate_id " +
+                    "G.created_date as created_date, G.updated_date as updated_date, G.user_id as user_id, G.item_code as item_code " +
+                    //"C.Id as cate_id " +
                     "FROM taobao_goods G " +
-                    "LEFT OUTER JOIN taobao_category C ON G.prd_category = C.Id " +
-                    "WHERE prd_status = '1' AND prd_category = '{0}'  ", cate_id));
+                    //"LEFT OUTER JOIN category C ON G.prd_category = C.Id " +
+                    "WHERE prd_status = '1' AND SUBSTR(prd_category, 2, {0}) = '{1}'  ", substr_pos, category_code));
                 if (dpCreate_date_from.Text != "" && dpCreate_date_to.Text != "") query_builder.Append(string.Format("AND substr(created_date, 1, 10) BETWEEN '{0}' AND '{1}' ", dpCreate_date_from.Text, dpCreate_date_to.Text ));
                 if (dpUpdate_date_from.Text != "" && dpUpdate_date_to.Text != "") query_builder.Append(string.Format("AND substr(updated_date, 1, 10) BETWEEN '{0}' AND '{1}' ", dpUpdate_date_from.Text, dpUpdate_date_to.Text ));
                 query_builder.Append(";");
@@ -1191,7 +1217,7 @@ namespace webCrawler
                         reader["opt_1"].ToString(), reader["opt_val_1"].ToString(), reader["opt_2"].ToString(), reader["opt_val_2"].ToString(), reader["opt_3"].ToString(), reader["opt_val_3"].ToString(),
                         reader["prd_opt_imgs"].ToString(), reader["prd_stock"].ToString(), reader["detail_img"].ToString(), 
                         reader["add_img_1"].ToString(), reader["add_img_2"].ToString(), reader["add_img_3"].ToString(), reader["add_img_4"].ToString(),
-                        reader["created_date"].ToString(), reader["updated_date"].ToString(), reader["user_id"].ToString()
+                        reader["created_date"].ToString(), reader["updated_date"].ToString(), reader["user_id"].ToString(), reader["item_code"].ToString()
                         )
                     );
                 }
@@ -1555,7 +1581,7 @@ namespace webCrawler
                 cate_l = (ViewModel.CategoryViewModel)lvCategory_L.SelectedValue;
                 cate_name.Append(cate_l.Cate_name);
                 cate_code.Append(cate_l.L);
-                code = cate_l.CODE;
+                if(cate_l.CODE != "") code = cate_l.CODE;
                 cate_id = cate_l.Id;
             }
             if (lvCategory_M.SelectedValue != null)
@@ -1563,7 +1589,7 @@ namespace webCrawler
                 cate_m = (ViewModel.CategoryViewModel)lvCategory_M.SelectedValue;
                 cate_name.Append(string.Format("/{0}", cate_m.Cate_name));
                 cate_code.Append(string.Format("/{0}", cate_m.M));
-                code = cate_m.CODE;
+                if(cate_m.CODE != "") code = cate_m.CODE;
                 cate_id = cate_m.Id;
             }
             if (lvCategory_S.SelectedValue != null)
@@ -1571,7 +1597,7 @@ namespace webCrawler
                 cate_s = (ViewModel.CategoryViewModel)lvCategory_S.SelectedValue;
                 cate_name.Append(string.Format("/{0}", cate_s.Cate_name));
                 cate_code.Append(string.Format("/{0}", cate_s.S));
-                code = cate_s.CODE;
+                if(cate_s.CODE != "") code = cate_s.CODE;
                 cate_id = cate_s.Id;
             }
             if (lvCategory_XS.SelectedValue != null)
@@ -1579,7 +1605,7 @@ namespace webCrawler
                 cate_xs = (ViewModel.CategoryViewModel)lvCategory_XS.SelectedValue;
                 cate_name.Append(string.Format("/{0}", cate_xs.Cate_name));
                 cate_code.Append(string.Format("/{0}", cate_xs.XS));
-                code = cate_xs.CODE;
+                if(cate_xs.CODE != "") code = cate_xs.CODE;
                 cate_id = cate_xs.Id;
             }
             txtCategoryName.Text = cate_name.ToString();

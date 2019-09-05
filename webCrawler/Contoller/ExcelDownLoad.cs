@@ -169,6 +169,7 @@ namespace webCrawler.Contoller
                         if (float.TryParse(prd_promo, out f_exchange) == false) prd_promo = "0";
                         string prd_price = row.Prd_price;
                         if (prd_price.IndexOf('-') > -1) prd_price = row.Prd_price.Split('-')[1];
+                        if (float.TryParse(prd_price, out f_exchange) == false) prd_price = "0";
                         html = "";
                         ++i;
                         data[i, 0] = row.Id;
@@ -215,6 +216,7 @@ namespace webCrawler.Contoller
                         data[i, 45] = row.Add_img_2.Split(new string[] { ".jpg" }, StringSplitOptions.None)[0] + ".jpg";
                         data[i, 46] = row.Add_img_3.Split(new string[] { ".jpg" }, StringSplitOptions.None)[0] + ".jpg";
                         data[i, 47] = row.Add_img_4.Split(new string[] { ".jpg" }, StringSplitOptions.None)[0] + ".jpg";
+                        data[i, 67] = row.Item_code;
                         data[i, 68] = "상세페이지 참고";
                         data[i, 69] = "상세페이지 참고";
                         data[i, 70] = "상세페이지 참고";
