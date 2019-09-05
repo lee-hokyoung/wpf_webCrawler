@@ -933,7 +933,6 @@ namespace webCrawler
                     detail_urls.Add(prd.Id);
                 }
             }
-
             getDetailHtml(detail_urls);
         }
         #region puppeteer로 수집하는 것
