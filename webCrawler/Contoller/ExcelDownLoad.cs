@@ -166,10 +166,14 @@ namespace webCrawler.Contoller
                     {
                         string prd_promo = row.Prd_promo;
                         if (prd_promo.IndexOf('-') > -1) prd_promo = row.Prd_promo.Split('-')[1];
+                        prd_promo = prd_promo.Replace("¥", "");
                         if (float.TryParse(prd_promo, out f_exchange) == false) prd_promo = "0";
+
                         string prd_price = row.Prd_price;
                         if (prd_price.IndexOf('-') > -1) prd_price = row.Prd_price.Split('-')[1];
+                        prd_price = prd_price.Replace("¥", "");
                         if (float.TryParse(prd_price, out f_exchange) == false) prd_price = "0";
+
                         html = "";
                         ++i;
                         data[i, 0] = row.Id;

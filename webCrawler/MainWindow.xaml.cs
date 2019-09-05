@@ -27,6 +27,7 @@ namespace webCrawler
         public string strConn = Properties.Settings.Default.strConn;
         public string strHtml = "", detailHtml = "";
         public List<string> html_node = null;
+        public List<Tuple<string, string>> html_node_with_id = null;
         public List<string> success_ids = null;
         public List<Tuple<string, string>> error_ids = null;
         public string main_url = "https://world.taobao.com/";
@@ -363,7 +364,7 @@ namespace webCrawler
         // DB에 저장되어 있는 리스트 불러오기 -> db_list에 저장(Prd_Store 클래스)
         
         // 상품정보 파싱
-        private void parsingPrdDetail(List<string> html_node)
+        private void parsingPrdDetail(List<Tuple<string, string>> html_node)
         {
             HtmlDocument doc = null, doc_img = null;
             HtmlNodeCollection node_id = null, img_wrap = null, imgs = null, price = null, promo = null, opts = null, stock = null, attr = null, additional_image = null, opts_with_img = null, prd_brand = null;
@@ -384,29 +385,31 @@ namespace webCrawler
                 txt_crawling_status.Text = "DB 저장 중";
                 conn = new MySqlConnection(strConn);
 
-                foreach (var node in html_node)
+                foreach (var node_item in html_node)
                 {
                     sql_id = ""; sql_prd_price = ""; sql_prd_promo = ""; sql_prd_stock = ""; sql_detail_img = ""; sql_prd_brand = "";
                     sql_opt_1 = ""; sql_opt_val_1 = ""; sql_opt_2 = ""; sql_opt_val_2 = ""; sql_opt_3 = ""; sql_opt_val_3 = ""; sql_prd_attr = "";
                     sql_add_img_1 = ""; sql_add_img_2 = ""; sql_add_img_3 = ""; sql_add_img_4 = ""; sql_opt_imgs = "";
                     try
                     {
+                        var node = node_item.Item1;
+                        sql_id = node_item.Item2;
                         if (node == null)
                             continue;
                         // 상품 속성 : prd_attr
                         doc = new HtmlDocument();
                         doc.LoadHtml(node);
 
-                        node_id = doc.DocumentNode.SelectNodes("//div[@id='LineZing']");
-                        if (node_id != null)
-                        {
-                            sql_id = node_id[0].Attributes["itemid"].Value;
-                        }
-                        else
-                        {
-                            node_id = doc.DocumentNode.SelectNodes("//div[@id='J_Pine']");
-                            if (node_id != null) sql_id = node_id[0].Attributes["data-itemid"].Value;
-                        }
+                        //node_id = doc.DocumentNode.SelectNodes("//div[@id='LineZing']");
+                        //if (node_id != null)
+                        //{
+                        //    sql_id = node_id[0].Attributes["itemid"].Value;
+                        //}
+                        //else
+                        //{
+                        //    node_id = doc.DocumentNode.SelectNodes("//div[@id='J_Pine']");
+                        //    if (node_id != null) sql_id = node_id[0].Attributes["data-itemid"].Value;
+                        //}
                         // 상품 상세 이미지 : prd_img
                         img_wrap = doc.DocumentNode.SelectNodes("//div[contains(@class, 'ke-post')]");
                         if (img_wrap != null)
@@ -738,7 +741,7 @@ namespace webCrawler
             catch (Exception e)
             {
                 MessageBox.Show(e.ToString());
-                throw e;
+                //throw e;
             }
             finally
             {
@@ -919,6 +922,7 @@ namespace webCrawler
             int chk_count = 0;
             List<string> detail_urls = new List<string>();
             html_node = new List<string>();
+            html_node_with_id = new List<Tuple<string, string>>();
             success_ids = new List<string>();
             error_ids = new List<Tuple<string, string>>();
 
@@ -1015,6 +1019,7 @@ namespace webCrawler
         private async void getDetailHtml(List<string> detail_urls)
         {
             int count = 0;
+            html_node_with_id = new List<Tuple<string, string>>();
             doc_opacity.Visibility = Visibility.Visible;
             doc_status.Visibility = Visibility.Visible;
             foreach (string id in detail_urls)
@@ -1040,7 +1045,9 @@ namespace webCrawler
                     //    Width = 800,
                     //    Height = 2000
                     //});
-                    html_node.Add(await puppeteer_page.GetContentAsync());
+                    //html_node.Add(await puppeteer_page.GetContentAsync());
+                    var html_content = await puppeteer_page.GetContentAsync();
+                    html_node_with_id.Add(Tuple.Create(html_content.ToString(), id));
                     success_ids.Add(id);
                 }
                 catch (TimeoutException t_ex)
@@ -1058,7 +1065,8 @@ namespace webCrawler
                     await puppeteer_page.CloseAsync();
                 }
             }
-            parsingPrdDetail(html_node);
+            //parsingPrdDetail(html_node);
+            parsingPrdDetail(html_node_with_id);
         }
 
         private void BtnMyDB_Click(object sender, RoutedEventArgs e)
